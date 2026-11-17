@@ -1,0 +1,796 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qian 阶段路线图 - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/pr-preview/pr-202/static/css/styles.6fe70ee060.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-202/static/js/async/route-0700594df1fc.05d18383b6.js" as="script">
+<script defer src="/pr-preview/pr-202/static/js/styles.82d8051f13.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/6.69fa91b589.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/index.1f8f231f48.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-202/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-202/design/roadmap.md">
+<link rel="describedby" href="/pr-preview/pr-202/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Qian 阶段路线图 - Qian 文档">
+<meta name="description" content="阶段之间的关系：后一阶段只在前一阶段的契约上叠加，不推翻；退出标准未达成不进入下一阶段的功能开发（允许并行设计与 PoC）。">
+<meta property="og:description" content="阶段之间的关系：后一阶段只在前一阶段的契约上叠加，不推翻；退出标准未达成不进入下一阶段的功能开发（允许并行设计与 PoC）。"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-202/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-202/llms.txt, the full documentation bundle is available at /pr-preview/pr-202/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-202/design/roadmap.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-202/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-202/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-202/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-202/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-202/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/roadmap.html" class="rp-sidebar-item rp-sidebar-item--active rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/adr/adr-022-rspress-unified-component-docs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-022 统一 Rspress 组件文档与验收</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-202/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/data-contracts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">数据过滤与记录扩展契约 v1</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/pr-preview/pr-202/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/decisions/component-entry-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单入口与程序集内多个插件实现</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/decisions/tenancy-http-v1-schema-correction.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">租户 HTTP v1 校验声明的首次发布基线纠偏</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-202/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002 / 003）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/design/ops/k3s-control-plane-recovery.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">K3s 控制面故障处置方案（S1-DEP-007）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="qian-阶段路线图"><a href="#qian-阶段路线图" class="rp-header-anchor rp-link" aria-label="链接到 Qian 阶段路线图">#</a>Qian 阶段路线图<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/pr-preview/pr-202/design/roadmap.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/ROADMAP.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/ROADMAP.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<blockquote>
+<p>状态：草案 v1 · 更新日期：2026-10-07 · 本文件是<strong>阶段、里程碑与退出标准的唯一真相源</strong>；PRD §15 只保留总览表与指针，决策理由见 <code>docs/adr/</code>（ADR-018 为阶段切分决策；ADR-020 组件模型 v2 已于 2026-10-07 Accepted、§7 待确认项全部拍板，S1 交付与退出标准已按其 §6 更新），可测的退出准则细化见 PRD §16。</p>
+<p>命名约定：产品 = Qian · 底座 = Kun · 组件库 = yue · 插件前缀 = <code>qian.</code> · 阶段 = S1–S4 · 优先级 = P0 / P1 / P2。</p>
+<p>状态图例：✅ 已完成 · 🚧 进行中 · ⬜ 未开始。里程碑只用 M1 / M2 … 占位，不编日期；日期在阶段启动评审时填入。</p>
+</blockquote>
+<h2 class="rp-toc-include" id="0-总览"><a href="#0-总览" class="rp-header-anchor rp-link" aria-label="链接到 0. 总览">#</a>0. 总览</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>阶段</th><th>名称</th><th>目标（一句话）</th><th>状态</th></tr></thead><tbody><tr><td>S1</td><td>技术底座</td><td>开发者用代码在 Qian 上写出一个多租户应用</td><td>⬜</td></tr><tr><td>S2</td><td>低代码构建</td><td>搭建者不写代码建出带审批的应用并授权给租户用户</td><td>⬜</td></tr><tr><td>S3</td><td>面向客户</td><td>租户从应用市场自助选购、开通、配置</td><td>⬜</td></tr><tr><td>S4</td><td>AI 原生 Agent 平台</td><td>Agent 发现、调用、编排乃至生成平台能力与应用</td><td>⬜</td></tr></tbody></table></div>
+<p>阶段之间的关系：后一阶段只在前一阶段的契约上叠加，不推翻；退出标准未达成不进入下一阶段的功能开发（允许并行设计与 PoC）。</p>
+<hr/>
+<h2 class="rp-toc-include" id="s1-技术底座-"><a href="#s1-技术底座-" class="rp-header-anchor rp-link" aria-label="链接到 S1 技术底座 ⬜">#</a>S1 技术底座 ⬜</h2>
+<h3 class="rp-toc-include" id="目标"><a href="#目标" class="rp-header-anchor rp-link" aria-label="链接到 目标">#</a>目标</h3>
+<p>开发人员用代码在 Qian 上写出一个多租户应用，登录 / SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供；平台自身能力以 <code>platform</code> profile 的 base 组合包交付（原 18 个系统插件按 seam 三角色拆包，ADR-020），每个插件能独立出修订、逐租户迁移、回切；开发者在空白项目里 <code>qian add identity authz files</code> 即可直接使用这些能力。</p>
+<h3 class="rp-toc-include" id="退出标准adr-018"><a href="#退出标准adr-018" class="rp-header-anchor rp-link" aria-label="链接到 退出标准（ADR-018）">#</a>退出标准（ADR-018）</h3>
+<ul>
+<li>开发人员用代码在 Qian 上写出一个多租户应用：登录 / SSO、鉴权、数据存储、文件上传、配置、网关、事件、审计全部由平台提供。</li>
+<li>一个官方 module 插件能独立出修订、逐租户迁移、回切。</li>
+<li>在空白项目里 <code>qian add identity authz files</code> 后 30 分钟内跑通登录、权限检查与上传（ADR-020 §6）。</li>
+<li>可测项 E1-1 … E1-14 见 PRD §16.1（含：跨租户渗透测试 0 漏洞；集成测试覆盖多副本消费 0 丢失；<code>platform</code> profile base 组合包内全部插件 TCK 100%——原「18 个系统插件」口径，ADR-020）。</li>
+</ul>
+<h3 class="rp-toc-include" id="核心交付"><a href="#核心交付" class="rp-header-anchor rp-link" aria-label="链接到 核心交付">#</a>核心交付</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>交付物</th><th>优先级</th></tr></thead><tbody><tr><td>运行时（原「内核」，ADR-020）</td><td><code>Qian.Runtime</code>（.NET）/ <code>@qian/runtime</code>（TS）：上下文 <code>ctx</code>、服务注册、类型化事件（<code>emit / waterfall / parallel / serial / bail</code>）、可逆副作用 <code>ctx.Effect()</code>、加载器；profile / 组合包 / patch 装载器与 <code>dump-config</code>；运行时语义 TCK。原内核的注册表、生命周期控制器、能力目录、契约仓库改为普通插件（<code>qian.registry</code> / <code>qian.lifecycle</code> / <code>qian.capabilities</code>）；租户上下文（fail-closed）、主体身份与 S2S、PDP/PEP、审计、计量等强制执行点作为 base 组合包里的 waterfall 监听器</td><td>P0</td></tr><tr><td><code>platform</code> profile base 组合包 = 平台插件（原 18 个系统插件按 seam 拆包，ADR-020；规范术语 R30）</td><td><code>qian.registry</code> / <code>qian.lifecycle</code> / <code>qian.capabilities</code>（原 <code>qian.kernel</code>；<code>qian.plugin-sdk</code> 的大部分并入 <code>Qian.Runtime</code> 与 <code>qian</code> CLI）、<code>qian.tenancy</code>、<code>qian.identity</code>（+ <code>connector.*</code>：通用 OIDC、企业微信，作为 <code>ctx.Identity</code> 的 Provider；组织目录最小集为其子模块）、<code>qian.authz</code>、<code>qian.data</code>、<code>qian.files</code>、<code>qian.config</code>、<code>qian.gateway</code>、<code>qian.events</code>、<code>qian.audit</code>、<code>qian.observability</code>、<code>qian.shell</code>、<code>qian.entitlement</code>（授权 v0）、<code>qian.model-gateway</code>（可选）、<code>qian.notify</code>、<code>qian.scheduler</code>、<code>qian.realtime</code>；每项拆为 Service Definition（<code>Qian.&lt;X&gt;.Abstractions</code>）+ Provider + Consumer，数量由组合包定义而不是决策</td><td>P0（model-gateway、realtime P1）</td></tr><tr><td>profile ×5（原可部署单元 ×5，ADR-020）</td><td><code>platform</code>、<code>gateway</code>、<code>identity</code>、<code>standalone</code>、<code>minimal</code>；可部署单元 = profile，新增只是新增一个 profile 文件；原可部署单元 ↔ v2 落位见本表之后的映射表（R31）；<code>gateway</code> 等边缘 profile 可 AOT，<code>platform</code> 不承诺 AOT</td><td>P0</td></tr><tr><td><code>qian</code> CLI / SDK / TCK</td><td><code>qian add &lt;component&gt;[@version]</code> / <code>remove</code> / <code>list</code> / <code>doctor</code> / <code>dump-config</code> / <code>init --template &lt;stack&gt;</code>（等价 <code>npx qian@latest --skill x --agent y --plugin z --yes</code>；原 validate / pack / publish / provision / tck 子命令并入；Node / TS 实现、Node ≥ 22 前置，<code>dotnet qian</code> 薄包装 S1 可选 P2，ADR-020 §7 第 3 条）、源生成器（代码部分字段派生并合并进 <code>plugin.json</code>）、TCK 用例集（含运行时语义：可逆副作用、scope 过滤、五种分发）、契约生成（OpenAPI 3.1、TS 客户端、MCP 工具描述、权限点）</td><td>P0</td></tr><tr><td>声明式表面 ×5（ADR-020）</td><td>skills / agents / commands / hooks / MCP 五种表面的解析器与校验器，另有 <code>tools/</code>、<code>ui/</code>；运行中重载；<code>AGENTS.md</code> 进每个仓库与每个包；包 README 含「模型体验」「已知限制与延期项」节</td><td>P0</td></tr><tr><td>官方市场（ADR-020）</td><td>官方市场仓库 <code>qian-plugins</code>（S1 私有，S3 随许可证评估公开，ADR-020 §7 第 4 条）与 <code>.qian/marketplace.json</code>、目录网站生成、<code>qian doctor</code> 健康检查；租户私有市场与社区市场发现 S3</td><td>P0</td></tr><tr><td>租户 scope patch（ADR-020）</td><td>租户启用插件 = 在租户 scope 挂载配置条目（存数据库、与文件 patch 同格式同校验器）；带作用域的遮蔽注册与 <code>restrict</code>；S1 scope 种类：租户 / 应用 / Agent 会话</td><td>P0</td></tr><tr><td>文档生成与 CI 门禁（ADR-020）</td><td>配置目录、模块图、事件图、seam 图、事件生产方 / 消费方映射由代码生成；新鲜度门禁；事件分发模式声明与调用点一致性校验</td><td>P0</td></tr><tr><td>Kun 缺口修复</td><td>后台链路租户回灌（含 Saga 执行器）、至少一次消费、Outbox 多副本锁（Saga 锁等其余修补 P1 可选）、网关强制认证与限流、gRPC 流式鉴权、OIDC 客户端链路、签发器与审计路径收敛、安全默认值强制装配</td><td>P0</td></tr><tr><td>身份</td><td>OpenIddict 唯一 issuer、Person + Membership、密码 / 短信 / TOTP、会话中心（强制下线、后通道登出、refresh 轮换、<code>identity_revision</code>）、client_credentials、多租户账号选择</td><td>P0</td></tr><tr><td>鉴权</td><td><code>Kun.Authorization</code> 端口、权限点清单声明、租户域 RBAC、默认角色模板、<code>check / batchCheck / listAllowedActions / explain</code>、决策审计；数据权限契约与系统变量（编译器在 S2）</td><td>P0</td></tr><tr><td>数据与文件</td><td>PostgreSQL 唯一一等库、共享库 + RLS 默认装配、schema-per-service、<code>qian.files</code> 新线（分片、MD5、预览票据契约）、基准类型与 PG 方言、Filter AST 定义</td><td>P0</td></tr><tr><td>配置</td><td>Apollo 部署（≥ 2.5.2，需 MySQL）、自研 .NET provider、secretRef、配置 Schema 化、租户级配置服务、变更先校验失败保留</td><td>P0</td></tr><tr><td>事件与审计</td><td>RabbitMQ K8s 化、Outbox 至少一次、事件信封对齐、事件目录；审计一套（命令级哈希链 + 实体级同事务）、<code>actor_type</code> 含 <code>agent</code></td><td>P0</td></tr><tr><td>网关</td><td>Traefik → <code>qian.gateway</code> → 服务；Higress 只管模型与 MCP；职责从 S1 画清</td><td>P0</td></tr><tr><td>组织与导航</td><td>组织树、岗位、责任岗位链查询契约、用户档案、菜单与资源模型、URN、偏好 KV、字典、i18n</td><td>P0</td></tr><tr><td>消息与调度</td><td><code>qian.notify</code>（通知内核 + 站内信 / 邮件 / 短信渠道）、<code>qian.scheduler</code>（集群安全调度器 + 回调契约）、<code>qian.realtime</code>（实时推送）、凭证保管；三者在 <code>platform</code> profile 的 base 组合包内（原 ADR-003 的 18 个系统插件，R1）</td><td>P0（realtime P1）</td></tr><tr><td>前端 yue</td><td><code>@yue/tokens</code>（三层、明暗）、<code>@yue/core</code>、<code>@yue/shell</code>（AppShell、MF2、插槽注册表、单一侧栏）、<code>@yue/data</code> DataTable 基础版、<code>@yue/form</code> SchemaForm、<code>@yue/biz</code> 选择器、认证页族、<code>@yue/sdk</code>、元数据契约草案</td><td>P0</td></tr><tr><td>包与市场前置</td><td>包格式 v0 = 组件文件夹 + marketplace 条目（ADR-014 经 ADR-020 修订，原 bundle v0）、组合包格式、代码部分制品库（OCI → Harbor，仅代码部分）、安装 / 升级 / 卸载引擎（<code>qian add / remove</code>）、修订回切、强制验签、授权 v0（手工授予）与租户 scope patch 分离</td><td>P0</td></tr><tr><td>部署</td><td><code>qian-&lt;env&gt;</code> 命名空间、专属 PG / Redis、Argo CD app-of-apps、Kustomize、<code>/healthz /readyz</code>、default-deny NetworkPolicy、ResourceQuota、按 digest 发布事件、Alertmanager</td><td>P0（Alertmanager P1）</td></tr><tr><td>Agent 防返工</td><td>带 Schema 的写命令（sideEffect / idempotencyKey / dryRun）、结构化错误、统一主体模型与委托链字段、<code>inputSchema</code> 禁租户字段 lint、审计含主体链与来源通道、trace + 计量标签贯通、事件契约化</td><td>P0</td></tr><tr><td>可选</td><td>Operation/Task 服务实现（S1 末；其资源契约由 <code>qian.capabilities</code>（原 <code>qian.kernel</code>）在 S1 预留，导入导出等长操作返回 Operation 资源，R8）、模型网关底座接线（GPUStack 注册进 Higress + Provider Adapter）、SchemaPerTenant 真库验证、DTCG 导出、Elsa PoC 对照、流程内核 API 提前</td><td>P1 / P2</td></tr></tbody></table></div>
+<p>原可部署单元 ↔ v2 落位（R31，S1 默认）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>原可部署单元</th><th>v2 落位</th></tr></thead><tbody><tr><td><code>qian-platform</code></td><td>profile <code>platform</code></td></tr><tr><td><code>qian-gateway</code></td><td>profile <code>gateway</code>（可 AOT）</td></tr><tr><td><code>qian-identity</code></td><td>profile <code>identity</code></td></tr><tr><td><code>qian-shell</code></td><td>不是 profile；yue 外壳为 <code>platform</code> profile 的 <code>shell</code> 组合包（静态前端制品，经 gateway 提供）</td></tr><tr><td><code>qian-model-gateway-adapter</code></td><td><code>model-gateway</code> 组合包，默认挂在 <code>platform</code>，可选独立 profile <code>model-gateway</code>（S1 · P1）</td></tr><tr><td>S2 <code>qian-lowcode</code></td><td>profile <code>lowcode</code></td></tr><tr><td>S2 <code>qian-workflow</code></td><td>profile <code>workflow</code></td></tr><tr><td>S2 <code>qian-file-preview</code></td><td><code>file-preview</code> 组合包，挂在 <code>lowcode</code> profile</td></tr><tr><td><code>standalone</code></td><td>消费者自己的宿主，装 <code>standalone</code> profile 的最小组合包</td></tr><tr><td><code>minimal</code></td><td>测试与 SDK 用的最小树</td></tr></tbody></table></div>
+<blockquote>
+<p>profile 可以被 patch 合并或拆分，表中为 S1 默认（R31）。</p>
+</blockquote>
+<h3 class="rp-toc-include" id="里程碑占位"><a href="#里程碑占位" class="rp-header-anchor rp-link" aria-label="链接到 里程碑占位">#</a>里程碑占位</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>里程碑</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td>S1-M1</td><td>ADR-001 … ADR-020 定稿（ADR-019 / ADR-020 已于 2026-10-07 转 Accepted，§7 待确认项全部拍板）；<code>plugin.json</code> 清单 Schema 与校验器、五种表面的解析器；<code>Qian.Runtime</code> 语义 TCK 首版；Kun 缺口修复 PR 提交；K3s 基线（Apollo、MySQL、RabbitMQ、NetworkPolicy）就绪</td><td>⬜</td></tr><tr><td>S1-M2</td><td><code>Qian.Runtime</code> + profile / 组合包 / patch 装载器 + <code>qian.tenancy / identity / authz / data / config / events / audit</code> 可运行；<code>qian add identity authz files</code> 可在空白项目装入并跑通；<code>identity</code> profile 通过 OIDC 基本一致性测试；TCK 首版</td><td>⬜</td></tr><tr><td>S1-M3</td><td><code>platform</code> profile base 组合包内全部插件过 TCK；<code>qian</code> CLI 与官方市场仓库可用，五种表面热重载；租户 scope patch 替代数据库开关；文档生成与 CI 门禁上线；yue 令牌层 + 核心组件 + 后台壳；§06 S1 Demo 由运行时外的开发者走通</td><td>⬜</td></tr><tr><td>S1-M4</td><td>跨租户渗透测试、多副本消费集成测试、修订回切演练通过；退出评审</td><td>⬜</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="依赖与风险"><a href="#依赖与风险" class="rp-header-anchor rp-link" aria-label="链接到 依赖与风险">#</a>依赖与风险</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>依赖 / 风险</th><th>说明</th><th>应对</th></tr></thead><tbody><tr><td>Kun 维护带宽</td><td>单人维护、节奏放缓；上游 PR 回合不确定</td><td>上游 PR 优先，设 1 个迭代回合入期限，否则维护 <code>Kun.*.Patches</code> 补丁包（ADR-001）</td></tr><tr><td>身份核心与鉴权引擎同时自建</td><td>两者都是「很大」量级且互为前置；安全责任全在自己</td><td>显式列安全预算（OIDC 一致性测试、渗透测试）；端口在内核、实现为 system 插件；分 M2 / M3 两步交付</td></tr><tr><td>Apollo 隐性成本</td><td>需新增 MySQL（现网全 PG）；官方 .NET 客户端停滞</td><td>集群内 operator 先跑 staging、生产托管；自研 provider；首发 2.5.x</td></tr><tr><td>现网单点与治理缺失</td><td>三节点只跨两台宿主、几乎全钉首节点、无 NetworkPolicy / ResourceQuota / Alertmanager</td><td>S1 补齐；生产与兄弟系统共集群但独立节点池</td></tr><tr><td>AOT 与动态性</td><td>严格 AOT 不能热插；低代码需运行时元数据</td><td>AOT 只留网关 / gRPC 边缘；业务服务 JIT；运行时装载只对 package / service 成立</td></tr><tr><td>Base UI 成熟度</td><td>原语覆盖未经验证</td><td>首迭代验证门，不过整体切 Radix，不混用</td></tr><tr><td>与兄弟系统（Agent 运行时）的对齐</td><td>S2S claim、事件信封、工具元数据、MCP 版本（对方钉在旧版）</td><td>制定对齐计划；Qian 以 2026-07-28 为目标版本并兼容旧客户端</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="s2-低代码构建-"><a href="#s2-低代码构建-" class="rp-header-anchor rp-link" aria-label="链接到 S2 低代码构建 ⬜">#</a>S2 低代码构建 ⬜</h2>
+<h3 class="rp-toc-include" id="目标-1"><a href="#目标-1" class="rp-header-anchor rp-link" aria-label="链接到 目标">#</a>目标</h3>
+<p>业务搭建者不写代码建出带审批的应用并授权给租户用户；低代码应用可打包分发；平台自营能力以包形式交付（吃自己的狗粮）。</p>
+<h3 class="rp-toc-include" id="退出标准adr-018-1"><a href="#退出标准adr-018-1" class="rp-header-anchor rp-link" aria-label="链接到 退出标准（ADR-018）">#</a>退出标准（ADR-018）</h3>
+<ul>
+<li>跑通「建应用 → 建表单与列表 → 走审批 → 授权给租户用户使用」。</li>
+<li>同一应用包在两个租户分别安装、各自配置、独立升级互不影响。</li>
+<li>可测项 E2-1 … E2-13 见 PRD §16.1。</li>
+</ul>
+<h3 class="rp-toc-include" id="核心交付-1"><a href="#核心交付-1" class="rp-header-anchor rp-link" aria-label="链接到 核心交付">#</a>核心交付</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>交付物</th><th>优先级</th></tr></thead><tbody><tr><td>可部署单元（经 ADR-020：以 profile 形式新增）</td><td>新增第 6 个可部署单元 <code>qian-lowcode</code>（JIT 宿主 / 非 AOT 孤岛；v2 口径为 profile <code>lowcode</code>；<code>qian-workflow</code> 为 profile <code>workflow</code>，<code>qian-file-preview</code> 为挂在 <code>lowcode</code> 的 <code>file-preview</code> 组合包，R31），承载 <code>qian.metadata</code>、<code>qian.dynamic-data</code>、<code>qian.schema-migrator</code>、<code>qian.expression</code>、<code>qian.forms</code> / <code>qian.lists</code>（服务端部分）、<code>qian.widgets</code>（Field Type Provider）、<code>qian.data-model</code>、<code>qian.data-api</code>；<code>qian.operations</code> 住 <code>platform</code> profile</td><td>P0</td></tr><tr><td>元数据与动态数据</td><td><code>qian.metadata</code> 元数据注册表与版本化仓储（草稿 / 发布 / 快照、diff、回滚、校验器、包层 / 租户层分层）、<code>qian.dynamic-data</code>（混合存储、Filter AST → SQL、泛型 CRUD 命令、<code>qian.record.changed.v1</code>）、Field Type Catalog、<code>qian.schema-migrator</code>（扩展 → 迁移 → 收缩、逐租户分批）、<code>qian.expression</code>（JSON AST 解释器 + 函数注册表）</td><td>P0</td></tr><tr><td>设计器与运行时</td><td>表单 / 列表设计器（三栏、单一 Schema + 端可见性、结构化校验错误）、表单 / 列表运行时（三态、子表、三层联动）、控件注册表交付控件集、发布向导（编译 → 迁移 → 切流 → 挂载）、权限资源同步</td><td>P0</td></tr><tr><td>审批</td><td>自研 .NET 轻量审批内核最小集（发起 / 审批 / 结束、三种网关、抄送、四种审批人来源、兜底三档、或签 / 会签 / 依次、八类动作、子流程、超时催办）、纵向节点树设计器、工作台四列表、<code>actions</code> 契约、<code>node.stalled</code></td><td>P0</td></tr><tr><td>权限</td><td>数据权限编译器、字段权限、授权界面（含字段 / 数据）、创建者自动 Owner、责任人解析契约</td><td>P0</td></tr><tr><td>插件机制</td><td><code>package</code> 元数据插件、<code>template / managed</code> + 元数据分层、升级同意规则、三方比较与冲突清单、逐租户批量迁移、Operation/Task、元数据生成闭环（人用）、字段敏感度</td><td>P0</td></tr><tr><td>声明式表面（低代码，ADR-020）</td><td>表单 / 列表 / 流程 / 页面作为声明式表面（<code>forms/ lists/ flows/ pages/</code>）进入组件目录；设计器的保存即产出组件文件夹（可进 git、进市场、被 patch）；profile <code>lowcode</code> / <code>workflow</code> 新增（R31）；官方代码插件热装卸不进 S2 核心交付：RT 领域 5 天时间盒 spike 验证 collectible <code>AssemblyLoadContext</code> 与 Kun 约束、结论写回 ADR-020，生产默认滚动重启（R27；ADR-020 §7 第 5 条已拍板）</td><td>P0（热装卸 spike P2）</td></tr><tr><td>数据与集成</td><td>数据建模、接口设计器、API 接口与日志、短信通道 UI、群机器人、监控与任务管理 UI、打印全套（模板、版本、绑定、浏览器打印）、文件预览提供者、模型目录与按用途路由</td><td>P0（打印设计器 S2 后期）</td></tr><tr><td>身份连接器</td><td>钉钉、飞书连接器（P0）；微信网站扫码连接器（P1，R4）</td><td>P0 / P1</td></tr><tr><td>前端 yue</td><td>DataTable 进阶、ImportWizard / ExportDialog、SuperQuery、ConditionBuilder、CodeEditor / Cron、业务选择器扩展、三大设计器基础设施、组件 manifest 全量、视觉回归</td><td>P0</td></tr><tr><td>表达式与脚本</td><td>JSON AST 表达式解释器 + 函数注册表；服务端 before / after Hook；前端 QuickJS 沙箱兜底（可选）</td><td>P0 / P1</td></tr><tr><td>可选</td><td>Wasm <code>function</code> 运行时（P2，ABI 中期拍板；服务端公式与规则先用 JSON AST 解释器）、<code>connector</code> 运行时、自动化（任务流程）、配置路径型门户、报表子集（列表 + 分组汇总 + XLSX）、视图（只读数据源）、加签 / 减签、自由画布视图、H5 渲染器（不做，预留端覆盖）、代码生成薄壳（后期）、富文本 / Markdown 选型调研（S2 前）</td><td>P1 / P2</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="里程碑占位-1"><a href="#里程碑占位-1" class="rp-header-anchor rp-link" aria-label="链接到 里程碑占位">#</a>里程碑占位</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>里程碑</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td>S2-M1</td><td>元数据 Schema 与校验器、动态数据引擎、Schema Migrator 可用；首个动态实体从建模到 Records API 跑通</td><td>⬜</td></tr><tr><td>S2-M2</td><td>表单 / 列表设计器与运行时、发布向导、权限资源同步；§06 S2 Demo 的表单与列表部分走通</td><td>⬜</td></tr><tr><td>S2-M3</td><td>审批内核最小集 + 节点树设计器 + 工作台；数据 / 字段权限；§06 S2 Demo 全流程走通</td><td>⬜</td></tr><tr><td>S2-M4</td><td><code>package</code> 打包、两租户独立安装与升级、冲突清单；平台自营应用以包形式交付；退出评审</td><td>⬜</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="依赖与风险-1"><a href="#依赖与风险-1" class="rp-header-anchor rp-link" aria-label="链接到 依赖与风险">#</a>依赖与风险</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>依赖 / 风险</th><th>说明</th><th>应对</th></tr></thead><tbody><tr><td>逐租户迁移与三方合并</td><td>大量租户 DDL、半升级态、租户定制与新版本冲突无完美方案</td><td>批次 / 并发 / 人工介入；冲突预检；升级前快照；不承诺自动回滚</td></tr><tr><td>元数据 Schema 与迁移管道从零建</td><td>参考平台无 Schema、改表即重建是反例</td><td>版本化 Schema + 前后端共用校验器；diff → 计划 → 审核 → 执行</td></tr><tr><td>动态引擎 SQL 安全</td><td>拼 SQL、租户字面量是反例</td><td>参数化 + 标识符白名单 + 查询构建器；注入测试进退出准则</td></tr><tr><td>审批逆向语义交叉</td><td>退回 / 撤回 / 撤销 / 拒绝续流与子流程、加签、计时器相互影响</td><td>回归集 + 属性测试；只追加流转记录；S2 流程域是 3–4 人数个迭代的主线</td></tr><tr><td>自建数据密集组件人力</td><td>与 S2 窗口冲突</td><td>S1 最小集先行；备选 antd v6 限控制台域并约定迁移期限</td></tr><tr><td>两套引擎复燃 / DSL 表达力不足</td><td>倒退回 eval 或新建第二套表单引擎</td><td>lint 门禁；三层联动策略；自由 JS 按钮明确不做</td></tr><tr><td>Wasm 宿主缺口</td><td>wasmtime-dotnet 不支持组件模型</td><td>ABI S2 中期拍板；公式与规则先用 JSON AST 解释器</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="s3-面向客户-"><a href="#s3-面向客户-" class="rp-header-anchor rp-link" aria-label="链接到 S3 面向客户 ⬜">#</a>S3 面向客户 ⬜</h2>
+<h3 class="rp-toc-include" id="目标-2"><a href="#目标-2" class="rp-header-anchor rp-link" aria-label="链接到 目标">#</a>目标</h3>
+<p>租户能从应用市场选购并开通应用，自助配置 IdP 与品牌；开放 ISV 与在线交易；提供高隔离档与私有化交付。</p>
+<h3 class="rp-toc-include" id="退出标准adr-018-2"><a href="#退出标准adr-018-2" class="rp-header-anchor rp-link" aria-label="链接到 退出标准（ADR-018）">#</a>退出标准（ADR-018）</h3>
+<ul>
+<li>租户能从应用市场选购并开通应用，自助配置 IdP 与品牌。</li>
+<li>可测项 E3-1 … E3-11 见 PRD §16.1。</li>
+</ul>
+<h3 class="rp-toc-include" id="核心交付-2"><a href="#核心交付-2" class="rp-header-anchor rp-link" aria-label="链接到 核心交付">#</a>核心交付</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>交付物</th><th>优先级</th></tr></thead><tbody><tr><td>租户自助</td><td>完整租户状态机与数据销毁、自助申请审核、多管理员与邀请、套餐下发、租户多连接 + HRD、国内三家 + ISV 第三方应用模式、SAML / CAS / LDAP、Passkey、目录同步（国内源 + SCIM）、自助注销与导出、品牌与白标域名、安装即建 client</td><td>P0（白标域名 / Passkey P1）</td></tr><tr><td>市场 M2 → M3</td><td>私有目录型市场（目录 / 详情 / 安装向导 / 试用 / 升级中心 / 审核台；受邀 ISV、线下结算）→ 开放 ISV 入驻与席位、在线支付与订阅、分成结算、评分评价、自动化安全扫描；Plan / Seat / Meter / Trial；三方合并冲突预检；工具描述哈希钉死；managed 应用禁止导出</td><td>P0（支付 / 评分 P1）</td></tr><tr><td>商业市场叠加（ADR-020）</td><td>商业市场（授权、计费、审核、ISV 入驻）叠在 <code>marketplace.json</code> 之上，不另起格式；<code>policy.authentication: ON_USE</code> 的连接器组件；租户私有市场与社区市场发现</td><td>P0</td></tr><tr><td>隔离与部署</td><td>DatabasePerTenant 高隔离档（独立 ns + PG / Redis，ApplicationSet 生成）、私有化整套 overlay 与离线包 + 授权文件、动态路由（租户 × 已安装应用）、接线 Application 生成器</td><td>P0</td></tr><tr><td>权限</td><td>OpenFGA 插件（资源实例共享与市场授权）、应用中心 / 后台权限区分、组织角色 / 身份切换等高级模式（可选）、Explain 工具</td><td>P1</td></tr><tr><td>呈现</td><td>门户设计型全套、表格报表（实体、版本、数据集、XLSX）、开放 API、分享链接内核、工作台、通知抽屉、多布局与偏好抽屉（可选）、服务端 PDF（可选）、大屏（可选，不复用参考源码）</td><td>P0（可选项 P2）</td></tr><tr><td>流程</td><td>拒绝 <code>continue</code>、归档、签收、委托 / 代理、撤销申请、暂停 / 恢复、协办、超时自动处置、决策流程（调用式）、自由流程、批量审批、自由画布视图、BPMN 导出器</td><td>按评审分 P1 / P2</td></tr><tr><td>安全</td><td>不可信 UI 沙箱（Worker 远程渲染 / iframe）、第三方 <code>service</code> 独立工作负载身份（私有化运维行为）、授权服务器对齐 MCP（RFC 9728 / 8414 / 8707）、成本与配额、租户自助 Agent 授权管理页（可选）</td><td>P0 / P1</td></tr><tr><td>前端 yue</td><td>门户 / 报表 / 打印设计器与运行时、移动 H5、UI 沙箱、shadcn 私有 registry（可选）</td><td>P0 / P1</td></tr><tr><td>S4 启动前置</td><td>Higress 升级到 ≥ 2.2.4 并开启 MCP 托管（第一批 MCP Server 在 Higress 注册），放在 S3 末；未完成不启动 S4-M1（PRD §10 10.2 / 10.5.8，R14）</td><td>P0（S3 末）</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="里程碑占位-2"><a href="#里程碑占位-2" class="rp-header-anchor rp-link" aria-label="链接到 里程碑占位">#</a>里程碑占位</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>里程碑</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td>S3-M1</td><td>租户自助申请 → 开通 → IdP → 品牌闭环；高隔离档 TCK 通过</td><td>⬜</td></tr><tr><td>S3-M2</td><td>私有目录型市场（M2）上线：自营 + 受邀 ISV、试用、升级中心、审核台；§06 S3 Demo 走通</td><td>⬜</td></tr><tr><td>S3-M3</td><td>开放 ISV 与在线交易（M3）；不可信 UI 沙箱；计量可拆分；Higress ≥ 2.2.4 + MCP 托管就绪（S4 启动前置）；退出评审</td><td>⬜</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="依赖与风险-2"><a href="#依赖与风险-2" class="rp-header-anchor rp-link" aria-label="链接到 依赖与风险">#</a>依赖与风险</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>依赖 / 风险</th><th>说明</th><th>应对</th></tr></thead><tbody><tr><td>第三方代码上架边界</td><td>已裁决不允许第三方 <code>service</code> 上架</td><td>只开放 package / function / connector / 受限 ui；私有化客户装自己的 service 属运维行为</td></tr><tr><td>国内生态 ISV 模式</td><td>开源 IdP 普遍缺国内第三方应用模式</td><td>自研连接器；资质门槛 + 安全审查并行</td></tr><tr><td>计费与合规</td><td>发票、分成、个人信息处理与跨境声明</td><td>首版「免费 / 联系销售 / 授权码」三种开通方式；在线支付后置</td></tr><tr><td>与兄弟系统的市场 / 注册表合并</td><td>两个市场是否合成一个注册表待定</td><td>以 Qian 注册表为真相源，对外接口参照官方 MCP Registry OpenAPI</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="s4-ai-原生-agent-平台-"><a href="#s4-ai-原生-agent-平台-" class="rp-header-anchor rp-link" aria-label="链接到 S4 AI 原生 Agent 平台 ⬜">#</a>S4 AI 原生 Agent 平台 ⬜</h2>
+<h3 class="rp-toc-include" id="目标-3"><a href="#目标-3" class="rp-header-anchor rp-link" aria-label="链接到 目标">#</a>目标</h3>
+<p>Agent 能发现、调用、编排乃至生成平台能力与应用；Qian 作为能力提供方与业务主数据权威，经 MCP / HTTP 对接外部 Agent 运行时，不自建 Agent loop。</p>
+<h3 class="rp-toc-include" id="退出标准adr-018-3"><a href="#退出标准adr-018-3" class="rp-header-anchor rp-link" aria-label="链接到 退出标准（ADR-018）">#</a>退出标准（ADR-018）</h3>
+<ul>
+<li>Agent 能发现、调用、编排乃至生成平台能力与应用。</li>
+<li>可测项 E4-1 … E4-8 见 PRD §16.1。</li>
+</ul>
+<h3 class="rp-toc-include" id="核心交付-3"><a href="#核心交付-3" class="rp-header-anchor rp-link" aria-label="链接到 核心交付">#</a>核心交付</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>类别</th><th>交付物</th><th>优先级</th></tr></thead><tbody><tr><td>MCP 门面</td><td>每租户 MCP 逻辑门面（Higress 托管，2026-07-28 无状态、<code>server/discover</code>、头部路由、可缓存列表）、按插件 / 应用生成 MCP Server（精选意图级工具 + 能力搜索工具）、授权服务器对齐</td><td>P0</td></tr><tr><td>Agent 主体</td><td><code>agent</code> 主体类型、<code>act</code> 委托链、令牌交换（RFC 8693）、Agent 有效权限 = 委托人 ∩ scope、<code>humanOnly</code> 强制、CIMD</td><td>P0</td></tr><tr><td>元数据生成闭环</td><td>Agent 提交 patch → 校验 → 预览 → 人工批准 → 发布 → 回滚；Agent 生成 <code>package</code>；<code>generatedBy / promptHash</code>；代码只落 <code>function</code> 沙箱</td><td>P0</td></tr><tr><td>长任务</td><td>Operation ↔ MCP Tasks；<code>input_required</code> ↔ MRTR；监督收件箱</td><td>P1</td></tr><tr><td>技能与应用</td><td>插件包内 <code>skills/</code> 目录（agentskills.io；skills 表面本身 S1 已支持，ADR-020，此处只剩提供方式）经 Skills over MCP 提供；MCP Apps 视图（yue 表单 / 列表作为 <code>ui://</code> 资源）；<code>@yue/agent</code>；shadcn MCP Server</td><td>P1</td></tr><tr><td>市场 M4</td><td>市场兼任私有 MCP registry（参照官方 Registry OpenAPI）；Agent 可检索的市场 API；agent-kit 包类型；Agent 生成应用的自动审核门禁</td><td>P1</td></tr><tr><td>extensions（ADR-020）</td><td>模型在策略下挂载与卸载插件（运行时自修改），建立在 S1 同一套装载器上（S1 只开放给人类 CLI）；Agent 生成的组件落为草稿组件文件夹并经同一校验器；每租户 MCP 门面由 <code>ctx.Tools</code> 的 scope 视图派生</td><td>P0</td></tr><tr><td>对接</td><td>与外部 Agent 运行时（MCP / HTTP）与沙箱（CubeSandbox 类）对接；A2A 端点（可选）；急停开关（可选）</td><td>P1 / P2</td></tr><tr><td>流程与数据</td><td>AI 建流程草稿（只生成「设计中」）；Agent 作审批人解析器 / 外部审批者 / 事件消费者 / 自动化动作；AI 建表 / 生成字段；接口即工具；注册表 → MCP 映射；模板 validate / render / explain</td><td>P1</td></tr><tr><td>成本</td><td>租户 / 应用 / Agent 维度的 token 与调用计量、预算与熔断（经模型服务网关）</td><td>P0</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="里程碑占位-3"><a href="#里程碑占位-3" class="rp-header-anchor rp-link" aria-label="链接到 里程碑占位">#</a>里程碑占位</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>里程碑</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td>S4-M1</td><td>租户 MCP 门面 + 授权发现 + 按权限过滤的工具列表；Agent 主体与委托链签发</td><td>⬜</td></tr><tr><td>S4-M2</td><td>元数据生成闭环；§06 S4 Demo 走通；监督收件箱</td><td>⬜</td></tr><tr><td>S4-M3</td><td>Skills / MCP Apps / 市场兼任 registry；成本配额；退出评审</td><td>⬜</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="依赖与风险-3"><a href="#依赖与风险-3" class="rp-header-anchor rp-link" aria-label="链接到 依赖与风险">#</a>依赖与风险</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>依赖 / 风险</th><th>说明</th><th>应对</th></tr></thead><tbody><tr><td>协议演进</td><td>MCP 路线图仍在推进（DPoP、Agent 身份与委托、渐进式发现）；注册与发现未定型</td><td>以官方扩展形式承载自定义语义；私有 registry 实现官方 OpenAPI；跟踪弃用窗口</td></tr><tr><td>外部 Agent 运行时的协议版本</td><td>对方客户端钉在旧版</td><td><code>server/discover</code> 兼容旧客户端；对齐计划</td></tr><tr><td>提示注入与工具投毒</td><td>不可信内容摄入后的动作、工具描述篡改</td><td>确定性控制优先：副作用分级默认策略、哈希钉死、人在回路、沙箱、审计</td></tr><tr><td>成本失控</td><td>全量工具目录塞入上下文、循环调用</td><td>精选意图级工具 + 能力搜索；网关 token 限流与缓存；预算熔断</td></tr></tbody></table></div>
+<hr/>
+<h2 class="rp-toc-include" id="跨阶段约束s1-起生效否则-s4-返工"><a href="#跨阶段约束s1-起生效否则-s4-返工" class="rp-header-anchor rp-link" aria-label="链接到 跨阶段约束（S1 起生效、否则 S4 返工）">#</a>跨阶段约束（S1 起生效、否则 S4 返工）</h2>
+<ol>
+<li>所有写操作走带 Schema 的命令（含副作用等级、幂等键、<code>dryRun</code>）。</li>
+<li>结构化、可自纠正的错误。</li>
+<li>统一主体模型（<code>user / service / agent</code>）与委托链字段。</li>
+<li>可解释、可预检的权限判定。</li>
+<li>一份契约多处生成（OpenAPI、MCP 工具、权限点、SDK、UI Schema）。</li>
+<li>租户上下文只来自令牌；<code>inputSchema</code> 禁止租户字段。</li>
+<li>审计含主体链与来源通道。</li>
+<li>追踪与计量贯通。</li>
+<li>事件契约化（稳定 ID + JSON Schema）。</li>
+<li>插件包签名与反向权限审批。</li>
+<li>第三方代码不进共享进程；制品不可变按 digest。</li>
+<li>一切皆插件、没有特权内核；组件 = 文件夹 + 一份清单 + 声明式表面 + 可选代码；任一注册要么全局、要么归属恰好一个 scope（ADR-020）。</li>
+</ol>
+<h2 class="rp-toc-include" id="修订历史"><a href="#修订历史" class="rp-header-anchor rp-link" aria-label="链接到 修订历史">#</a>修订历史</h2>
+<ul>
+<li>2026-10-06：草案 v1，依据 <code>docs/decisions/key-decisions-v0.md</code> D18 与基线汇编阶段矩阵整理。</li>
+<li>2026-10-06：一致性复核 R1–R20 落实——S1 系统插件 18 个；Wasm <code>function</code> S2 可选（P2）；微信网站扫码 S2 P1；Operation/Task 契约 S1 预留；Saga 其余修补 P1 可选；Higress ≥ 2.2.4 + MCP 托管列为 S4 启动前置（S3 末）。</li>
+<li>2026-10-06：组件模型 v2 回填（ADR-020，Proposed）——S1 目标 / 退出标准 / 核心交付按 ADR-020 §6 第一行更新：新增 <code>Qian.Runtime</code> / <code>@qian/runtime</code>、<code>qian</code> CLI、官方市场仓库、五种表面、五个 profile、租户 scope patch、文档生成与 CI 门禁；「系统插件 ×18」改为 <code>platform</code> profile base 组合包；退出标准加「空白项目 <code>qian add identity authz files</code> 30 分钟跑通」；S2 加低代码声明式表面；S3 加商业市场叠加；S4 加 <code>extensions</code>；跨阶段约束加第 12 条。</li>
+<li>2026-10-06：裁决 R27（热装卸口径）、R30（平台插件术语）、R31（原可部署单元 ↔ v2 落位映射表，S1 核心交付之后）落实。</li>
+<li>2026-10-07：ADR-020 §7 八条与 ADR-019 §7 待确认项全部拍板，ADR-019 / ADR-020 转为 Accepted——S1 CLI 行补 Node / TS 实现与 <code>npx qian@latest</code>（Node ≥ 22，<code>dotnet qian</code> 薄包装 P2）；官方市场行补仓库名 <code>qian-plugins</code>（S1 私有）；S2 热装卸改为 RT 领域 5 天 spike、不进核心交付；S1-M1 的 ADR 定稿项按已拍板更新。</li>
+</ul><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-202/design/index.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>文档索引</span></span></a><a href="/pr-preview/pr-202/design/changelog.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>变更日志</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#0-总览" class="rp-toc-item rp-link" title="0. 总览" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">0. 总览</span></a><a href="#s1-技术底座-" class="rp-toc-item rp-link" title="S1 技术底座 ⬜" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">S1 技术底座 ⬜</span></a><a href="#目标" class="rp-toc-item rp-link" title="目标" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">目标</span></a><a href="#退出标准adr-018" class="rp-toc-item rp-link" title="退出标准（ADR-018）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">退出标准（ADR-018）</span></a><a href="#核心交付" class="rp-toc-item rp-link" title="核心交付" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">核心交付</span></a><a href="#里程碑占位" class="rp-toc-item rp-link" title="里程碑占位" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">里程碑占位</span></a><a href="#依赖与风险" class="rp-toc-item rp-link" title="依赖与风险" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">依赖与风险</span></a><a href="#s2-低代码构建-" class="rp-toc-item rp-link" title="S2 低代码构建 ⬜" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">S2 低代码构建 ⬜</span></a><a href="#目标-1" class="rp-toc-item rp-link" title="目标" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">目标</span></a><a href="#退出标准adr-018-1" class="rp-toc-item rp-link" title="退出标准（ADR-018）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">退出标准（ADR-018）</span></a><a href="#核心交付-1" class="rp-toc-item rp-link" title="核心交付" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">核心交付</span></a><a href="#里程碑占位-1" class="rp-toc-item rp-link" title="里程碑占位" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">里程碑占位</span></a><a href="#依赖与风险-1" class="rp-toc-item rp-link" title="依赖与风险" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">依赖与风险</span></a><a href="#s3-面向客户-" class="rp-toc-item rp-link" title="S3 面向客户 ⬜" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">S3 面向客户 ⬜</span></a><a href="#目标-2" class="rp-toc-item rp-link" title="目标" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">目标</span></a><a href="#退出标准adr-018-2" class="rp-toc-item rp-link" title="退出标准（ADR-018）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">退出标准（ADR-018）</span></a><a href="#核心交付-2" class="rp-toc-item rp-link" title="核心交付" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">核心交付</span></a><a href="#里程碑占位-2" class="rp-toc-item rp-link" title="里程碑占位" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">里程碑占位</span></a><a href="#依赖与风险-2" class="rp-toc-item rp-link" title="依赖与风险" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">依赖与风险</span></a><a href="#s4-ai-原生-agent-平台-" class="rp-toc-item rp-link" title="S4 AI 原生 Agent 平台 ⬜" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">S4 AI 原生 Agent 平台 ⬜</span></a><a href="#目标-3" class="rp-toc-item rp-link" title="目标" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">目标</span></a><a href="#退出标准adr-018-3" class="rp-toc-item rp-link" title="退出标准（ADR-018）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">退出标准（ADR-018）</span></a><a href="#核心交付-3" class="rp-toc-item rp-link" title="核心交付" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">核心交付</span></a><a href="#里程碑占位-3" class="rp-toc-item rp-link" title="里程碑占位" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">里程碑占位</span></a><a href="#依赖与风险-3" class="rp-toc-item rp-link" title="依赖与风险" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">依赖与风险</span></a><a href="#跨阶段约束s1-起生效否则-s4-返工" class="rp-toc-item rp-link" title="跨阶段约束（S1 起生效、否则 S4 返工）" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">跨阶段约束（S1 起生效、否则 S4 返工）</span></a><a href="#修订历史" class="rp-toc-item rp-link" title="修订历史" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">修订历史</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>

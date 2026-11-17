@@ -1,0 +1,296 @@
+> For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt.
+
+# Interface IFileStorage
+
+:::info 生成页
+本页由 DocFX 从 nuget.org 上 `Kun.Storage.Abstractions` 2026.10.25 的 XML 注释生成，源码在 kun 仓库 [`src/Kun.Storage.Abstractions`](https://github.com/idadawn/kun/tree/v2026.10.25/src/Kun.Storage.Abstractions)（`v2026.10.25`）。Kun 文档与代码不一致处以代码为准（[ADR-001 D1.8](/design/adr/adr-001-kun-relationship.md)）；Qian 对 Kun 的选用与约束见[与 Qian 的关系](/sdk/kun/with-qian.md)。
+:::
+
+Namespace: [Kun.Storage](/sdk/api/kun/kun-storage/index.md)\
+Assembly: Kun.Storage.Abstractions.dll
+
+Transport-agnostic object-storage abstraction used by Kun services to upload,
+download, and manage blob artifacts (attachments, user uploads, exported files).
+Implementations map the seven operations to a backing store (local filesystem,
+Amazon S3, MinIO, Azure Blob, GCS).
+
+```csharp
+public interface IFileStorage
+```
+
+## Remarks
+
+Object keys are relative, forward-slash-delimited paths (e.g. `tenants/42/avatar.png`).
+They do not include a leading slash and do not identify the bucket / root — the
+implementation resolves those from its configured options.
+
+Implementations MUST force `Content-Disposition: attachment` on presigned
+download URLs whose stored content type is in
+[ActiveWebContentTypes.Value](/sdk/api/kun/kun-storage/activewebcontenttypes.md#Kun_Storage_ActiveWebContentTypes_Value), even if
+[DownloadOptions.ForceDownload](/sdk/api/kun/kun-storage/downloadoptions.md#Kun_Storage_DownloadOptions_ForceDownload) is `false`. This defends against
+cross-origin script execution when a tenant-uploaded HTML/SVG/XML blob is opened
+inline by a browser.
+
+## Methods
+
+### DeleteAsync(string, CancellationToken) \{#Kun_Storage_IFileStorage_DeleteAsync_System_String_System_Threading_CancellationToken\_}
+
+Removes the object. Returns `true` if the object existed and was deleted; `false` otherwise.
+
+```csharp
+Task<bool> DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[bool](https://learn.microsoft.com/dotnet/api/system.boolean)>
+
+### ExistsAsync(string, CancellationToken) \{#Kun_Storage_IFileStorage_ExistsAsync_System_String_System_Threading_CancellationToken\_}
+
+Returns `true` when an object with the given key exists.
+
+```csharp
+Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[bool](https://learn.microsoft.com/dotnet/api/system.boolean)>
+
+### GetMetadataAsync(string, CancellationToken) \{#Kun_Storage_IFileStorage_GetMetadataAsync_System_String_System_Threading_CancellationToken\_}
+
+Reads the metadata (size, content type, ETag, last-modified) of the object, or `null` if missing.
+
+```csharp
+Task<ObjectMetadata?> GetMetadataAsync(string objectKey, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[ObjectMetadata](/sdk/api/kun/kun-storage/objectmetadata.md)?>
+
+### GetPresignedDownloadAsync(string, DownloadOptions?, TimeSpan?, CancellationToken) \{#Kun_Storage_IFileStorage_GetPresignedDownloadAsync_System_String_Kun_Storage_DownloadOptions_System_Nullable_System_TimeSpan__System_Threading_CancellationToken\_}
+
+Produces a time-limited URL the caller can use to download the object directly
+from the backing store. The URL MUST include `Content-Disposition: attachment`
+when the stored content type is an active web content type (see remarks on
+[IFileStorage](/sdk/api/kun/kun-storage/ifilestorage.md)).
+
+```csharp
+Task<PresignedDownloadUrl> GetPresignedDownloadAsync(string objectKey, DownloadOptions? options = null, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Storage object key.
+
+`options` [DownloadOptions](/sdk/api/kun/kun-storage/downloadoptions.md)?
+
+Optional download behavior (download-name override, custom response headers).
+
+`expiresIn` [TimeSpan](https://learn.microsoft.com/dotnet/api/system.timespan)?
+
+Validity window for the presigned URL.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[PresignedDownloadUrl](/sdk/api/kun/kun-storage/presigneddownloadurl.md)>
+
+### GetPresignedPostUploadAsync(string, UploadConstraints?, TimeSpan?, CancellationToken) \{#Kun_Storage_IFileStorage_GetPresignedPostUploadAsync_System_String_Kun_Storage_UploadConstraints_System_Nullable_System_TimeSpan__System_Threading_CancellationToken\_}
+
+Creates a presigned POST upload descriptor. The signed policy embeds
+[UploadConstraints.MaxBytes](/sdk/api/kun/kun-storage/uploadconstraints.md#Kun_Storage_UploadConstraints_MaxBytes) when set, so the backing store (not the
+framework) rejects oversized uploads before any bytes are persisted. Allowed
+content types are encoded into the policy when
+[UploadConstraints.AllowedContentTypes](/sdk/api/kun/kun-storage/uploadconstraints.md#Kun_Storage_UploadConstraints_AllowedContentTypes) is supplied.
+
+```csharp
+Task<PresignedPostUpload> GetPresignedPostUploadAsync(string objectKey, UploadConstraints? constraints = null, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Target object key.
+
+`constraints` [UploadConstraints](/sdk/api/kun/kun-storage/uploadconstraints.md)?
+
+Optional upload constraints. When `null`, no size/type
+limits are baked into the policy.
+
+`expiresIn` [TimeSpan](https://learn.microsoft.com/dotnet/api/system.timespan)?
+
+Lifetime of the signed policy.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[PresignedPostUpload](/sdk/api/kun/kun-storage/presignedpostupload.md)>
+
+### GetPresignedUploadAsync(string, string, UploadConstraints?, TimeSpan?, CancellationToken) \{#Kun_Storage_IFileStorage_GetPresignedUploadAsync_System_String_System_String_Kun_Storage_UploadConstraints_System_Nullable_System_TimeSpan__System_Threading_CancellationToken\_}
+
+Produces a time-limited URL the caller can `PUT` content to. The returned
+record carries the exact HTTP headers the caller must send so server-side
+constraint enforcement works.
+
+```csharp
+Task<PresignedUploadUrl> GetPresignedUploadAsync(string objectKey, string contentType, UploadConstraints? constraints = null, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Storage object key.
+
+`contentType` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Declared content type for the upload.
+
+`constraints` [UploadConstraints](/sdk/api/kun/kun-storage/uploadconstraints.md)?
+
+Size / content-type policy enforced by the URL signature.
+
+`expiresIn` [TimeSpan](https://learn.microsoft.com/dotnet/api/system.timespan)?
+
+Validity window.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[PresignedUploadUrl](/sdk/api/kun/kun-storage/presigneduploadurl.md)>
+
+#### Remarks
+
+The PUT URL returned here cannot embed [UploadConstraints.MaxBytes](/sdk/api/kun/kun-storage/uploadconstraints.md#Kun_Storage_UploadConstraints_MaxBytes) in
+the signature; consumers that need size enforcement at the S3 layer should use
+[IFileStorage.GetPresignedPostUploadAsync](/sdk/api/kun/kun-storage/ifilestorage.md#Kun_Storage_IFileStorage_GetPresignedPostUploadAsync_System_String_Kun_Storage_UploadConstraints_System_Nullable_System_TimeSpan__System_Threading_CancellationToken_) instead — its signed POST policy bakes
+`content-length-range` into the signature so S3 rejects oversized bodies with
+HTTP 400 before any bytes are persisted.
+
+### ListAsync(string?, int, string?, CancellationToken) \{#Kun_Storage_IFileStorage_ListAsync_System_String_System_Int32_System_String_System_Threading_CancellationToken\_}
+
+Lists objects whose keys start with `prefix`.
+
+```csharp
+Task<ListObjectsResult> ListAsync(string? prefix = null, int maxKeys = 1000, string? continuationToken = null, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`prefix` [string](https://learn.microsoft.com/dotnet/api/system.string)?
+
+Key prefix (e.g. `tenants/42/`). Pass `null` or empty for the root listing.
+
+`maxKeys` [int](https://learn.microsoft.com/dotnet/api/system.int32)
+
+Upper bound on the number of objects returned in a single call. Implementations may clamp.
+
+`continuationToken` [string](https://learn.microsoft.com/dotnet/api/system.string)?
+
+Opaque token returned from a previous call. Pass `null` for the first page.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[ListObjectsResult](/sdk/api/kun/kun-storage/listobjectsresult.md)>
+
+### OpenReadAsync(string, CancellationToken) \{#Kun_Storage_IFileStorage_OpenReadAsync_System_String_System_Threading_CancellationToken\_}
+
+Opens a readable stream over the object's content for server-side reads (e.g.
+computing a content diff). The caller MUST dispose the returned stream.
+
+```csharp
+Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Storage object key.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[Stream](https://learn.microsoft.com/dotnet/api/system.io.stream)>
+
+#### Remarks
+
+Optional capability. Backends that only expose presigned URLs leave the default,
+which throws [`NotSupportedException`](https://learn.microsoft.com/dotnet/api/system.notsupportedexception) — callers should treat that as
+"server-side read unavailable" and degrade (e.g. metadata-only diff). Overriding
+implementations SHOULD throw [`FileNotFoundException`](https://learn.microsoft.com/dotnet/api/system.io.filenotfoundexception) when the object is missing.
+
+### UploadAsync(string, Stream, string, UploadConstraints?, CancellationToken) \{#Kun_Storage_IFileStorage_UploadAsync_System_String_System_IO_Stream_System_String_Kun_Storage_UploadConstraints_System_Threading_CancellationToken\_}
+
+Uploads `content` to `objectKey`.
+
+```csharp
+Task<ObjectMetadata> UploadAsync(string objectKey, Stream content, string contentType, UploadConstraints? constraints = null, CancellationToken cancellationToken = default)
+```
+
+#### Parameters
+
+`objectKey` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+Storage object key (forward-slash-delimited path).
+
+`content` [Stream](https://learn.microsoft.com/dotnet/api/system.io.stream)
+
+Readable stream with the payload. The stream is consumed fully.
+
+`contentType` [string](https://learn.microsoft.com/dotnet/api/system.string)
+
+MIME type of the payload (e.g. `image/png`).
+
+`constraints` [UploadConstraints](/sdk/api/kun/kun-storage/uploadconstraints.md)?
+
+Optional size and content-type policy; the store validates and rejects on violation.
+
+`cancellationToken` [CancellationToken](https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken)
+
+Cancellation token.
+
+#### Returns
+
+[Task](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task-1)\<[ObjectMetadata](/sdk/api/kun/kun-storage/objectmetadata.md)>
+
+The final [ObjectMetadata](/sdk/api/kun/kun-storage/objectmetadata.md) of the uploaded object.

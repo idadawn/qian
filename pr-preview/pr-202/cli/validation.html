@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>校验与 TCK - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/pr-preview/pr-202/static/css/styles.6fe70ee060.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-202/static/js/async/route-66ce22e8f32c.97c1c38c98.js" as="script">
+<script defer src="/pr-preview/pr-202/static/js/styles.82d8051f13.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/6.69fa91b589.js"></script>
+<script defer src="/pr-preview/pr-202/static/js/index.1f8f231f48.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-202/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-202/cli/validation.md">
+<link rel="describedby" href="/pr-preview/pr-202/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="校验与 TCK - Qian 文档">
+<meta name="description" content="清单与表面校验器、运行时语义 TCK 与 CI 门禁。">
+<meta property="og:description" content="清单与表面校验器、运行时语义 TCK 与 CI 门禁。"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-202/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-202/llms.txt, the full documentation bundle is available at /pr-preview/pr-202/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-202/cli/validation.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-202/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-202/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-202/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-202/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-202/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-202/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-202/cli/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">CLI 与规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/commands.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">qian 命令</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/plugin-json.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单 plugin.json</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/layout.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">组件文件夹布局</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/surfaces.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">声明式表面的文件格式</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/profile-patch.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">profile、组合包与 patch</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/marketplace-json.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">目录市场 marketplace.json</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-202/cli/validation.html" class="rp-sidebar-item rp-sidebar-item--active rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">校验与 TCK</span></div><div class="rp-sidebar-item__right"></div></a></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="qian-part-notice">版本：开发版（main）。「<!-- -->CLI 与规格<!-- -->」随 Qian 包族的 SemVer 多版本发布，首个版本发布后在此切换版本（<a href="/pr-preview/pr-202/design/prd/specs/docs-site" class="rp-link">文档站规范 §5</a>）。</div><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="校验与-tck"><a href="#校验与-tck" class="rp-header-anchor rp-link" aria-label="链接到 校验与 TCK">#</a>校验与 TCK<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/pr-preview/pr-202/cli/validation.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本同步自 <a href="/pr-preview/pr-202/design/prd/specs/component-model.html" class="rp-link">组件模型规格 §10</a>（仓库 <code>docs/prd/specs/component-model.md</code>），不另写；请修改规格源文件。</p>
+</blockquote>
+<h2 class="rp-toc-include" id="101-清单与表面校验器"><a href="#101-清单与表面校验器" class="rp-header-anchor rp-link" aria-label="链接到 10.1 清单与表面校验器">#</a>10.1 清单与表面校验器</h2>
+<p>校验器是一个库（<code>Qian.Runtime.Validation</code> / <code>@qian/validation</code>），被 <code>qian doctor</code> / <code>qian pack</code>、装载器（Resolve 阶段）、<code>qian.registry</code>（写入 <code>scope_patches</code> 前）、市场仓库 CI 与 Agent 门面（S4 校验 Agent 生成的草稿组件）共用——组件文件夹（分发形态）与注册表（运行态真相源）用同一校验器（R35）。错误以 <code>{ code, pointer, message, allowed? }</code> 列表返回（沿 v1 §4.1），<code>pointer</code> = 文件路径 + JSON Pointer（Markdown 表面指向 front matter 键）。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>对象</th><th>结构校验</th><th>语义校验</th></tr></thead><tbody><tr><td><code>plugin.json</code></td><td><code>plugin/v2</code></td><td><code>id</code> 前缀规则；<code>inject ∩ provides = ∅</code>；<code>surfaces.*</code> 指向存在；<code>tier × form × sandbox</code>（§11.1）；<code>runtime.entry</code> 在包内可定位；<code>configSchema</code> 合法且 <code>x-qian-sensitive</code> 属性为 <code>string</code>；<code>engines</code> 可解析；<code>inject / provides</code> 中 <code>&lt;Key&gt;.&lt;Registry&gt;:&lt;name&gt;</code> 的 <code>&lt;Key&gt;.&lt;Registry&gt;</code> 必须是某 Definition 声明的注册表子服务（R38）</td></tr><tr><td><code>SKILL.md</code> / <code>agents/*.md</code> / <code>commands/*.md</code></td><td>front matter Schema</td><td><code>name</code> = 目录名 / 文件名；正文非空；<code>allowed-tools</code> / <code>tools</code> / <code>skills</code> 引用可解析（跨组件引用 warning）；内联 shell 必须被 <code>shell(...)</code> 覆盖；<code>@</code> 内联只允许组件内路径；相对链接指向组件内文件</td></tr><tr><td><code>hooks.json</code></td><td><code>hooks/v2</code></td><td>Qian 事件名在 hooks Schema 固定的矩阵或事件目录中（未知 <code>a/b</code> error）；Agent 宿主事件只校验大驼峰命名（未知名 warning 并透传，R39）；<code>matcher</code> 可编译；<code>command</code> 仅 <code>system / official</code>；<code>http.url</code> 域名在 <code>policy.egress</code>；<code>plugin.handler</code> 可解析</td></tr><tr><td><code>.mcp.json</code></td><td><code>mcp/v2</code></td><td><code>stdio</code> 仅非平台 profile；敏感头 / env 必须 <code>secretRef://</code>；<code>url</code> 域名在 <code>policy.egress</code></td></tr><tr><td><code>tools/*.json</code></td><td><code>tool/v2</code></td><td><code>inputSchema</code> 合法且 <code>additionalProperties: false</code>；无租户字段；<code>sideEffect ≠ read ⇒ idempotent ∧ idempotencyKey</code>；<code>description ≥ 10 字</code>；<code>schemaSha256</code> 回写一致；<code>binding</code> 可解析</td></tr><tr><td><code>metadata/*.json</code></td><td>各自 Schema</td><td>权限点 <code>&lt;component-id&gt;:&lt;resource&gt;:&lt;action&gt;</code> 且前缀 = 本组件 id；事件 id 全局唯一；角色模板只引用本组件或已 <code>inject</code> seam 的权限点</td></tr><tr><td><code>ui/manifest.json</code></td><td><code>ui/v2</code></td><td><code>engines.yue</code> 必填；<code>exposes</code> 与 <code>federation.manifest</code> 一致</td></tr><tr><td><code>qian.patch.yml</code> / <code>qian.profile.yml</code></td><td><code>patch/v2</code> / <code>profile/v2</code></td><td>条目 <code>scope.kind ∈ scopes[]</code>；<code>plugin</code> 可解析；<code>config</code> 过 <code>configSchema</code>；S1 拒绝 <code>hmr.code: true</code>；<code>build.aot: true</code> 时树中无非 AOT 组件</td></tr><tr><td><code>marketplace.json</code></td><td><code>marketplace/v2</code></td><td><code>name</code> 唯一；<code>source</code> 按类型必填项；<code>category ∈ categories[]</code>；条目 <code>policy</code> 与组件清单不一致 warning</td></tr><tr><td>全部文件</td><td>—</td><td>密钥扫描：疑似密钥键名（<code>secret / token / password / key</code>）的值必须 <code>secretRef://</code>；高熵字符串拒绝；任何输入 Schema 禁止租户字段</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="102-运行时语义-tck"><a href="#102-运行时语义-tck" class="rp-header-anchor rp-link" aria-label="链接到 10.2 运行时语义 TCK">#</a>10.2 运行时语义 TCK</h2>
+<p>TCK 是<strong>语言无关的场景文件</strong>（<code>tck/runtime/*.scenario.yml</code>：给定组件 / 条目 / patch 层 → 期望的挂载顺序、注册可见性、事件结果、释放顺序），由 .NET 与 TS 各自的 harness 执行，两侧必须全部通过（D20.2；ADR-020 §5「语义以本 spec 为准」）。S1 用例：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>编号</th><th>用例</th><th>期望</th></tr></thead><tbody><tr><td>T01</td><td>依赖等待</td><td>B <code>inject: [X]</code> 先于 A（<code>provides: [X]</code>）进入树；B <code>Pending</code>，A <code>Ready</code> 后 B 才 <code>Apply</code>；顺序 A → B</td></tr><tr><td>T02</td><td>环路</td><td>A ↔ B 互相 <code>inject</code>；Resolve 失败，诊断列出 <code>A → B → A</code></td></tr><tr><td>T03</td><td>逆序释放</td><td>依次注册 e1、e2、e3；Unmount 释放顺序 e3、e2、e1</td></tr><tr><td>T04</td><td>级联卸载与恢复</td><td>Unmount A（提供 X）后 B 被 Unmount 回到 <code>Pending</code>；重新 Mount A 后 B 重新 <code>Apply</code>，效果栈先清空再填充</td></tr><tr><td>T05</td><td>waterfall 短路</td><td>三个监听器，中间者不调 <code>next()</code>；第三个未被调用，结果为中间者返回值</td></tr><tr><td>T06</td><td>waterfall 顺序</td><td>priority 高者在外层；同级按挂载顺序</td></tr><tr><td>T07</td><td>parallel 聚合</td><td>一个抛异常，其余完成；发起方收到聚合异常且 <code>Partial</code> 含两个结果</td></tr><tr><td>T08</td><td>serial 中断</td><td>第二个抛异常；第三个不执行</td></tr><tr><td>T09</td><td>bail 首值</td><td>第一个返回空、第二个返回值；第三个不被调用，结果为第二个的值</td></tr><tr><td>T10</td><td>emit 隔离</td><td>监听器异常不传播到发起方；其余监听器仍执行</td></tr><tr><td>T11</td><td>模式不一致</td><td>事件定义 <code>emit</code>，<code>On</code> 传 <code>waterfall</code>；挂载失败</td></tr><tr><td>T12</td><td>scope 遮蔽</td><td>全局 <code>(Files, upload)</code> 与 <code>tenant:t-001</code> 内同名注册；在 t-001 得 scope 内项，在 <code>tenant:t-002</code> 与全局得全局项</td></tr><tr><td>T13</td><td>restrict 交集</td><td>对 t-001 施加两个 restriction（保留 {a, b} 与 {b, c}）；<code>List</code> 只返回 b；执行 a 的错误与执行不存在的 z 完全相同</td></tr><tr><td>T14</td><td>无继承</td><td><code>agent-session:s-9</code> 看不到 <code>tenant:t-001</code> 的 scope 内注册</td></tr><tr><td>T15</td><td>patch 叠加顺序</td><td>组合包 <code>{a}</code>、profile patch <code>{b}</code>、CLI overlay <code>{c}</code>；结果 <code>{c}</code>（整体替换无残留），<code>layer</code> 为 CLI 层</td></tr><tr><td>T16</td><td>patch 禁用与再启用、替换 Provider</td><td>profile <code>disabled: true</code> + overlay <code>disabled: false</code> ⇒ 条目存在；后层不同 <code>plugin</code> ⇒ 新 Provider 提供同一键，Consumer 不变</td></tr><tr><td>T17</td><td>config 校验先于 Apply</td><td>不合法 config 的条目 <code>Failed</code>，<code>Apply</code> 未被调用</td></tr><tr><td>T18</td><td>同 scope 重复 Provide</td><td>第二个条目挂载失败并报出第一个条目 id</td></tr><tr><td>T19</td><td>声明式表面热重载</td><td>修改 <code>SKILL.md</code> 的 <code>description</code>；<code>ctx.Tools</code> 更新，替换期间读取方只看到旧内容或新内容，代码条目效果栈未变</td></tr><tr><td>T20</td><td>整树 teardown</td><td>按挂载顺序逆序 Unmount；每个条目满足 T03</td></tr><tr><td>T21</td><td>跨 scope 分发可见性</td><td>全局监听器收到 <code>tenant:t-001</code> 的分发；<code>tenant:t-002</code> 的监听器收不到</td></tr><tr><td>T22</td><td>optionalInject</td><td>键缺失时 <code>Apply</code> 执行且 <code>TryInject</code> 为空；键稍后出现不触发重新 <code>Apply</code></td></tr><tr><td>T23</td><td>独立模式等价</td><td>同一组 Provider 在 <code>minimal</code> 与 <code>platform</code> 下对同一场景产出相同结果（ADR-019 D19.8 第二条的运行时侧）；S1 由 QA-002 用 TCK 组合包 <code>qian.bundle.tck-platform</code> 与 CRM 样例 Provider 组验证，D19.8 点名的 Files / Authz / Identity.Client 对照见 S1-QA-003 / S1-QA-005（S1-DEC-019 R68）</td></tr><tr><td>T24</td><td>注册表 seam 同名独占与遮蔽</td><td>两个全局条目向 <code>Identity.Connectors</code> 注册同名 <code>oidc</code>，第二个挂载失败并报出第一个条目 id；<code>tenant:t-001</code> 内注册同名 <code>oidc</code> 后，t-001 的 <code>Connectors.Get(&quot;oidc&quot;)</code> 得 scope 内项、t-002 得全局项（R38）</td></tr><tr><td>T25</td><td>注册原位替换</td><td>经 <code>Provide</code> 句柄替换实例后解析得新值，具名注册的 <code>List</code> 顺序与 scope 内注册的可见范围不变；以 <code>inject</code> 依赖该键的条目释放后重新 <code>Apply</code>；条目卸载后句柄拒绝替换，注册无残留</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="103-ci-门禁"><a href="#103-ci-门禁" class="rp-header-anchor rp-link" aria-label="链接到 10.3 CI 门禁">#</a>10.3 CI 门禁</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>门禁</th><th>检查</th><th>失败条件</th></tr></thead><tbody><tr><td>G1 清单派生一致</td><td>源生成器重新派生 <code>runtime.entry</code>、<code>inject[]</code>、<code>provides[]</code>、代码派生的 <code>tools/*.json</code>、<code>configSchema</code>，与仓库比对</td><td>任一差异</td></tr><tr><td>G2 文档新鲜度</td><td><code>qian.docs</code> 重新产出配置目录（全部 <code>configSchema</code> 汇编）、模块图（条目 × <code>inject / provides</code>）、事件图（事件 × 生产方 × 消费方 × 模式）、seam 图（Definition × Provider × Consumer），与 <code>docs/generated/</code> 比对</td><td>任一差异（D20.9）</td></tr><tr><td>G3 依赖图</td><td><code>dotnet list package --include-transitive</code> + npm lockfile：Abstractions 不含 Provider；Provider 不含其它 Provider；任何 <code>Qian.*</code> / <code>@qian/*</code> 库不含 <code>qian.registry</code> / <code>qian.lifecycle</code> / <code>qian.capabilities</code> 的包；组件库对 Qian 的唯一依赖是 <code>Qian.Runtime</code> / <code>@qian/runtime</code></td><td>任一违反（D20.10、ADR-019 D19.8）</td></tr><tr><td>G4 公共 API</td><td><code>Microsoft.CodeAnalysis.PublicApiAnalyzers</code> 覆盖全部 <code>Qian.*</code>；<code>api-extractor</code> 覆盖全部 <code>@qian/*</code></td><td>未登记的公共 API 变更</td></tr><tr><td>G5 事件模式一致</td><td>全部 <code>ctx.On</code> 调用点的模式字面量 vs 事件定义处</td><td>不一致（D20.3）</td></tr><tr><td>G6 校验器全绿</td><td>对仓库内全部组件、profile、patch、marketplace 运行 §10.1</td><td>任一 error</td></tr><tr><td>G7 TCK 双侧</td><td>§10.2 全部场景在 .NET 与 TS harness 通过</td><td>任一失败</td></tr><tr><td>G8 密钥、租户字段、链接、禁用词</td><td>§10.1 末行扫描；文档链接指向真实文件；参考平台品牌名零命中</td><td>任一命中</td></tr></tbody></table></div><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-202/cli/marketplace-json.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>目录市场 marketplace.json</span></span></a><div class="rp-prev-next-page__placeholder"></div></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#101-清单与表面校验器" class="rp-toc-item rp-link" title="10.1 清单与表面校验器" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">10.1 清单与表面校验器</span></a><a href="#102-运行时语义-tck" class="rp-toc-item rp-link" title="10.2 运行时语义 TCK" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">10.2 运行时语义 TCK</span></a><a href="#103-ci-门禁" class="rp-toc-item rp-link" title="10.3 CI 门禁" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">10.3 CI 门禁</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>

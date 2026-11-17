@@ -1,0 +1,2093 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>认证页族设计规格（登录 &#x2F; 第二因子 &#x2F; 租户选择与切换 &#x2F; 强制改密 &#x2F; 绑定 &#x2F; 设备码 &#x2F; 授权同意） - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<link href="/static/css/styles.20c85c07f3.css" rel="stylesheet">
+<link rel="preload" href="/static/js/async/route-76a61ddc3af1.139cd18e59.js" as="script">
+<script defer src="/static/js/styles.6c2e798d13.js"></script>
+<script defer src="/static/js/lib-react.3a03aaf12f.js"></script>
+<script defer src="/static/js/lib-router.80316d8e03.js"></script>
+<script defer src="/static/js/hq.1398cf1414.js"></script>
+<script defer src="/static/js/index.bc00a3996e.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/design/prd/specs/auth-pages.md">
+<link rel="describedby" href="/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="认证页族设计规格（登录 / 第二因子 / 租户选择与切换 / 强制改密 / 绑定 / 设备码 / 授权同意） - Qian 文档">
+<meta name="description" content="状态：草案 2026-10-21，待产品负责人确认（§8 D1–D14）。合成自三份设计（企业后台派为主线，发行方视角派与无密码多渠道派并入）与九份评审，纠错记录见 §9。">
+<meta property="og:description" content="状态：草案 2026-10-21，待产品负责人确认（§8 D1–D14）。合成自三份设计（企业后台派为主线，发行方视角派与无密码多渠道派并入）与九份评审，纠错记录见 §9。"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /llms.txt, the full documentation bundle is available at /llms-full.txt, and this page is available as Markdown at /design/prd/specs/auth-pages.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item"><a href="/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><button type="button" class="rp-switch-appearance" aria-label="切换主题"><span aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" class="rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="none" viewBox="0 0 19 19" class="rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></span></button><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a class="rp-social-links__item" href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" aria-label="GitHub 源码仓库"><span class="rp-social-links__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span></a></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/design/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">文档索引</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/roadmap.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">路线图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/changelog.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">架构决策（ADR）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/adr/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-001-kun-relationship.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Qian 与 Kun 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-002-plugin-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-002 插件模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-003-kernel-boundary-s1-services.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 内核边界与 S1 服务拆分</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-004-database-tenant-isolation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 数据库与租户隔离</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-005-identity-sso.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 身份与 SSO</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-006-authorization-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 鉴权模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-007-config-center-apollo.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 配置中心</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-008-events-messaging.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 事件与消息</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-009-audit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 审计</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-010-gateway-layers.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 网关分层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-011-metadata-dynamic-data.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 元数据与动态数据层</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-012-workflow-engine.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 流程引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-013-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 前端与 yue</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-014-marketplace.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 应用市场形态</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-015-model-gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-016-iclaw-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 与 iClaw 的边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-017-deployment.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-017 部署</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-018-stages-s1-scope.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-018 阶段切分与 S1 范围</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-019-library-first-packages.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-019 库优先（Library-first）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-020-component-model-v2.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-020 组件模型 v2</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-021-product-family-structure.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-021 产品族结构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-022-rspress-unified-component-docs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-022 统一 Rspress 组件文档与验收</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/adr/adr-023-kun-qian-merge-blueprint.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-023 Qian 并入 Kun 并重新定位 Kun</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">产品需求（PRD）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/01-vision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">1. 愿景与定位</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/02-principles.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">2. 设计原则</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/03-concepts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">3. 核心概念模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/04-market.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">4. 形态与目标市场</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/05-differentiators.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">5. 核心差异化</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/06-users-scenarios.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">6. 用户与场景</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/07-s1-foundation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§07 S1 技术底座功能规格</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/08-s2-lowcode.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§08 S2 低代码构建</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/09-s3-customer.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§09 S3 面向客户</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/10-s4-agent.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§10 S4 AI 原生 Agent 平台与模型服务网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/11-ux-glossary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">11. 体验原则与产品词表</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/12-boundaries.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§12 能力边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/13-security.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§13 权限与安全</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/14-quality.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">§14 质量与评估</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/15-roadmap.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">15. 演进路线（指针）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/16-metrics.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">16. 成功指标</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/17-references.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">17. 借鉴声明</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">专题规格</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/prd/specs/auth-pages.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">认证页族设计规格（登录 / 第二因子 / 租户选择与切换 / 强制改密 / 绑定 / 设备码 / 授权同意）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/component-model.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/data-contracts.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">数据过滤与记录扩展契约 v1</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/docs-site.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">文档站信息架构与规范（Rspress 2.0）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/plugin-manifest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · 插件清单 v1（<code>qian-plugin.yaml</code>）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/tenant-signup.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">租户自助开通：注册申请、平台审核与首次进入</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/prd/specs/yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">专题 spec · yue 组件库</span></div><div class="rp-sidebar-item__right"></div></a></div></div></div></div><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移方案</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/migration/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/01-tenant-identity-access.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 01 · 租户、组织、身份与 SSO、权限、系统管理、控制台与个人中心、消息入口、移动端</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/02-app-form-list.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 02 · 应用、表单设计、列表设计、视图、功能发布、运行时数据引擎</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/03-workflow.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 03 · 流程与审批</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/04-data-integration-presentation.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 04 · 数据中心、集成中心、消息与调度、门户、报表、打印、大屏、文件预览、AI 中心清单</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/migration/05-frontend-yue.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">迁移映射 05 · 参考平台前端组件与设计器全集 → yue 分层与阶段、工程化、移动端策略</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">决策清单</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/decisions/authz-identity-revision-wiring.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">授权变更 → 身份修订递增的接线口径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/component-entry-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">组件清单入口与程序集内多个插件实现</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/feature-flags-write-boundary.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">特性开关写入与发布边界</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/framework-refinement-2026-10.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">框架细化决策备忘录：Agent 框架口径下的 Kun / Qian / 网关 / K3s / Serverless</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/gateway-native-aot-options.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">网关完整依赖的 NativeAOT 实施路径</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/key-decisions-v0.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 关键决策清单 v0（已全部拍板，作为历史记录保留）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/runtime-profile-metadata.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">真实组件清单启用后的开发 profile 与 AOT 验收</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/system-component-same-version.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">system 级预装组件的文件夹变了而版本号没变</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/decisions/tenancy-http-v1-schema-correction.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">租户 HTTP v1 校验声明的首次发布基线纠偏</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">调研基线</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/research/baseline-digest.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Qian 调研基线要点汇编</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">generated</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/generated/config-catalog.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/event-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/module-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块图</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/generated/seam-graph.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">seam 图</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">ops</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/design/ops/configuration-runbook.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">配置开发、运行与故障处置（S1-CFG-001 / 002 / 003）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/ops/k3s-control-plane-recovery.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">K3s 控制面故障处置方案（S1-DEP-007）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/design/ops/staging-first-deploy.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">staging 首次部署：平台与身份同进程（S1-DEP-011）</span></div><div class="rp-sidebar-item__right"></div></a></div></div></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="认证页族设计规格登录--第二因子--租户选择与切换--强制改密--绑定--设备码--授权同意"><a href="#认证页族设计规格登录--第二因子--租户选择与切换--强制改密--绑定--设备码--授权同意" class="rp-header-anchor rp-link" aria-label="链接到 认证页族设计规格（登录 / 第二因子 / 租户选择与切换 / 强制改密 / 绑定 / 设备码 / 授权同意）">#</a>认证页族设计规格（登录 / 第二因子 / 租户选择与切换 / 强制改密 / 绑定 / 设备码 / 授权同意）<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><a class="rp-llms-button" href="/design/prd/specs/auth-pages.md" aria-label="查看本页 Markdown">Markdown 链接</a></div>
+<blockquote>
+<p>本页由构建脚本镜像自仓库 <a href="https://github.com/idadawn/qian/blob/main/docs/prd/specs/auth-pages.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/prd/specs/auth-pages.md</code></a>，请修改源文件，不要改本页。</p>
+</blockquote>
+<p>状态：草案 2026-10-21，待产品负责人确认（§8 D1–D14）。合成自三份设计（企业后台派为主线，发行方视角派与无密码多渠道派并入）与九份评审，纠错记录见 §9。</p>
+<p>入库说明（2026-11-15）：本文写于 2026-10-21，此后一直是工作区里的未提交文件。2026-11-15 按产品负责人的指示入库：除本段与下面三条外，正文只在 §8 D14 一行删去一处括注（本仓库是公开仓库，删节处标「〔已删节〕」），其余一字未改；§8 的 D1–D14 仍未拍板，由 <a href="https://github.com/idadawn/qian/blob/main/pm/tasks/S1-DEC-035.md" target="_blank" rel="noopener noreferrer" class="rp-link">S1-DEC-035</a> 跟踪。读正文前先看三点：</p>
+<ul>
+<li>认证页已经实现。S1-YUE-006（认证页族）、S1-YUE-002（外壳认证流程）、S1-YUE-012（薄入口并入外壳）都已完成；S1-YUE-019 又按产品负责人给的开通流程原型复刻了登录页等八个页面；S1-YUE-021（待做）要把强制改密、SSO 回调与连接器回调页对齐现在的登录表单。入库时没有逐条核对本文与已实现页面是否一致。本文是未拍板的设计草案，不代表已实现页面的现状；要了解现状，看各任务的验收记录。</li>
+<li>文中的 IDP-012 是<a href="/design/decisions/framework-refinement-2026-10.html" class="rp-link">框架细化备忘录</a> §8 的候选任务号，指拟新建的「agent 客户端与 token exchange」，这个任务还没有建档。看板上的 S1-IDP-012 是另一件事（拆分部署下授权变更到身份修订递增）。</li>
+<li>文中的 Q5、Q20、Q22、Q25 指备忘录 §9 的待拍板项，也都没有拍板。</li>
+</ul>
+<p>设计画板（13 块：登录页密码态 / 暗色 / 手机单一方式与凭据错误 / 仅企业 IdP 与会话失效横幅、第二因子 TOTP、租户选择、强制修改密码、确认绑定、连接器回调错误、登录过期弹窗、租户切换器与代管横幅、设备码、授权同意）：<a href="https://claude.ai/artifact/6So7dKqETKHjXEukWXmu3m" target="_blank" rel="noopener noreferrer" class="rp-link">https://claude.ai/artifact/6So7dKqETKHjXEukWXmu3m</a>（私有链接，所有者分享后他人才能打开；取值只用 <code>@yue/tokens</code> 的 light / dark 语义色）。</p>
+<p>与既有文档的关系：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>文档</th><th>关系</th></tr></thead><tbody><tr><td>ADR-005（D5.1–D5.13）</td><td>本文是 D5.2 账号模型、D5.3 因子、D5.4 会话失效、D5.6 连接器、D5.11 显式绑定、D5.13 服务端强制「仅企业 IdP」在前端层（yue）的呈现规格；不改任何决策</td></tr><tr><td>PRD 7.4.1 / 7.4.2</td><td>后端登录状态机（锁定 / 延时、选择令牌、强制改密、绑定）的页面映射；连接器按租户 scope 过滤、未挂载与不存在不可区分</td></tr><tr><td>PRD 7.15.1 / 7.15.2</td><td>外壳认证流程（OIDC code + PKCE、AuthProvider、刷新队列、过期弹窗、租户切换器、代管横幅）与 yue 最小集的消费清单</td></tr><tr><td><code>docs/prd/specs/yue.md</code> §1.1</td><td>本文是「认证页族」一行（账号密码、SSO 跳转与回调、多租户二次选择、登录过期弹窗；可选验证码登录、第三方登录按钮区、忘记密码、Captcha）的展开；实现归 S1-YUE-006（经注入的 <code>AuthProvider</code> 对 mock 验收），真实接线归 S1-YUE-002</td></tr><tr><td><code>docs/decisions/framework-refinement-2026-10.md</code> §7.3 / Q20 / Q22</td><td>Agent 时代新增的设备码（RFC 8628）/ loopback PKCE 取令牌页与授权同意页；备忘录尚未拍板，本文按其默认建议预留并标条件</td></tr><tr><td><code>contracts/v0</code></td><td>全部错误响应为 ErrorDetail（必填 <code>type</code> / <code>title</code> / <code>status</code> / <code>code</code> / <code>message</code> / <code>trace_id</code>，可选 <code>detail</code> / <code>instance</code> / <code>pointer</code> / <code>allowed</code> / <code>errors[]</code>；业务错误只用 409 / 422；封闭对象）；本文新增的 <code>AUTH_*</code> 码为提案，需登记进 <code>error-codes.json</code></td></tr></tbody></table></div>
+<p>三层口径：Kun = 框架层（<code>Kun.Identity.AspNetCore</code> RP 侧 Cookie 会话、<code>Identity.Client</code>），Qian = 平台层（<code>qian.identity</code> 唯一 issuer、<code>qian.tenancy</code>、<code>qian.realtime</code>），yue = 前端层（<code>@yue/shell</code> 认证页族、<code>@yue/form</code> 登录表单、<code>@yue/core</code> 组件、<code>@yue/tokens</code> 令牌、<code>@yue/sdk</code> i18n / <code>PlatformClient</code>）。</p>
+<h2 class="rp-toc-include" id="1-设计原则"><a href="#1-设计原则" class="rp-header-anchor rp-link" aria-label="链接到 1 设计原则">#</a>1 设计原则</h2>
+<ol>
+<li><strong>服务端是唯一裁判</strong>：锁定、延时、仅企业 IdP（D5.13）、绑定唯一、租户状态、会话吊销、强制改密全部由平台层判定；前端隐藏、禁用、倒计时只是体验层（PRD 13.10 第 4 条）。页面按服务端返回的「下一步」（<code>next ∈ { done, mfa, select_tenant, change_password, bind, enroll_totp }</code>）机械推进，不自判策略；刷新页面重新 GET 当前 flow 即可恢复到同一步。</li>
+<li><strong>能力驱动而非配置驱动</strong>：登录方式、连接器、验证码开关、密码策略全部来自 <code>getLoginOptions({ tenantHint })</code> 按租户 scope 下发；未挂载的连接器在 DOM 中不存在（PRD 7.4.2「与不存在无法区分」）。只有一种方式时版式仍成立（S1-A 首屏只有密码 + 通用 OIDC）。</li>
+<li><strong>防枚举优先于友好</strong>：账号不存在 / 密码错误 / 账号已锁定 / 延时中 / 仅企业 IdP / 租户不可登录，在凭据校验通过之前一律同码同文案（<code>AUTH_CREDENTIALS_INVALID</code>）；锁定通知只经 7.12 带外送达；发码对未知标识同响应且不发码；不显示剩余尝试次数；租户状态与成员状态只在主因子校验通过之后可见。</li>
+<li><strong>错误即 ErrorDetail</strong>：<code>code</code> 决定 UI 分支，<code>message</code> 为可见文案，<code>pointer</code> / <code>errors[]</code> 经 <code>@yue/form</code> 落到字段，<code>trace_id</code> 折叠在「错误编号」后供报障；非 ErrorDetail 响应只显示状态级通用文案；未知 <code>code</code> 走通用错误态而不是白屏。</li>
+<li><strong>凭据只与 issuer 同源</strong>：密码、验证码、绑定票据、选择令牌只在 <code>qian.identity</code> 宿主的同源页面与 HttpOnly Cookie 中流转，永不经过依赖方（外壳）的 JavaScript；外壳只做 RP 侧（跳转、回调、过期弹窗、切换器、代管横幅）。令牌不进 localStorage / URL / iframe，权限不进令牌（ADR-006），登录页 <code>frame-ancestors &#x27;none&#x27;</code>。</li>
+<li><strong>可解释的拒绝、显式的同意</strong>（PRD 11.1.4、D5.11）：每个拒绝态在同一版式用 Alert + 按钮态说明原因与下一步，不用弹窗遮盖；外部身份绑定、第三方 / Agent 客户端授权、设备码批准都要用户看见对象后显式点一次，没有静默绑定、没有预勾选、没有「记住此决定」（S1）。</li>
+<li><strong>Agent 时代原则</strong>：开发者与 Agent 客户端走标准取令牌通道（授权码 + PKCE S256、RFC 8628 设备码、RFC 8252 loopback），不发静态 API Key；同意页诚实展示 client（来自注册表）、scope（目录人话 + 副作用等级）、resource（RFC 8707 受众）与委托语义（有效权限 = 委托人权限 ∩ scope，<code>humanOnly</code> 一律拒绝，PRD 13.11）；浏览器端永不显示或接收令牌。</li>
+</ol>
+<p>无障碍按 WCAG 2.2（W3C Recommendation，2023-10-05）AA，三语言（zh-CN / zh-TW / en-US）与明暗两态从第一天就在；移动端优先、单一 DOM。</p>
+<h2 class="rp-toc-include" id="2-信息架构"><a href="#2-信息架构" class="rp-header-anchor rp-link" aria-label="链接到 2 信息架构">#</a>2 信息架构</h2>
+<p>阶段列同时给旧 S1 的 P 级与备忘录 §7.2 的 S1-A / S1-B 口径（备忘录未拍板前两套并列；Q6 拍板后以 S1-A / S1-B 为准）。宿主列：<code>identity</code> = <code>qian.identity</code> 宿主同源挂载的 <code>@yue/shell</code> 认证页库；<code>shell</code> = <code>qian.shell</code> 外壳；<code>cli</code> = <code>qian</code> CLI 内置静态页。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>路由</th><th>页面</th><th>阶段</th><th>宿主</th><th>用途</th><th>归属任务</th></tr></thead><tbody><tr><td><code>/login?flow=</code></td><td>登录页（租户号折叠步骤 + 密码 / 验证码 Tab + 连接器区 + 策略态 + 会话失效横幅）</td><td>S1-P0 · S1-A</td><td>identity</td><td>统一入口；按 login-options 渲染；承载全部策略态</td><td>S1-YUE-006 / IDP-003 / IDP-007</td></tr><tr><td><code>/login/mfa?flow=</code></td><td>第二因子验证（TOTP）</td><td>S1-P0 · S1-B（TOTP 随 IDP-006）</td><td>identity</td><td>主因子后按租户策略 step-up；S1 只有 TOTP</td><td>YUE-006 / IDP-006</td></tr><tr><td><code>/login/select-tenant?flow=</code></td><td>租户选择（5 分钟租户选择令牌，11.2）</td><td>S1-P0 · S1-A</td><td>identity</td><td>命中多个 Membership 时选定 <code>tenant_id</code> / <code>membership_id</code></td><td>YUE-006 / IDP-003</td></tr><tr><td><code>/login/change-password?flow=</code></td><td>强制修改密码（不可取消）</td><td>S1-P0 · S1-A</td><td>identity</td><td>初始密码 / 管理员重置 / 到期；完成前不签发会话 Cookie</td><td>YUE-006 / IDP-003</td></tr><tr><td><code>/login/connector/{connectorId}?flow=</code></td><td>连接器出站中转 + 回调后落点</td><td>S1-P0 · S1-A</td><td>identity</td><td>服务端 302 上游前的瞬时态；<code>/connect/callback/{connectorId}</code> 处理后 302 回本路由读 <code>next</code></td><td>YUE-006 / IDP-007</td></tr><tr><td><code>/login/bind?flow=</code></td><td>确认绑定外部身份</td><td>S1-P0 · S1-A</td><td>identity</td><td>首次经连接器登录：登录已有账号 → 显式确认；同租户重复绑定被拒</td><td>YUE-006 / IDP-007</td></tr><tr><td><code>/auth/callback</code></td><td>依赖方回调态（换码中 / 失败）</td><td>S1-P0 · S1-A（外壳 v0.1 可选）</td><td>shell</td><td>网关 <code>Identity.Client</code> 换码后的 UI 落点；state / error 校验；清 URL</td><td>YUE-002 / IDP-005</td></tr><tr><td>（外壳全局）</td><td>会话弹窗族：登录过期 AlertDialog、会话失效接收、权限变更 Toast、上次登录提示</td><td>S1-P0 · S1-A</td><td>shell</td><td>刷新失败弹过期；logout 事件 ≤ 3s 跳登录；<code>identityRevisionChanged</code> 静默刷新</td><td>YUE-002 / IDP-004 / AZ-004</td></tr><tr><td>（外壳用户菜单）</td><td>租户切换器 Dialog + 平台代管常驻横幅</td><td>S1-P0 · S1-A（横幅随 TEN-010 S1-B）</td><td>shell</td><td>运行中切换 = 服务端重签 + 重拉菜单与权限；代管态常驻横幅</td><td>YUE-002 / IDP-003 / TEN-010</td></tr><tr><td><code>/connect/logout</code></td><td>登出确认 / 已登出</td><td>S1-P0 · S1-A</td><td>identity（服务端渲染）</td><td>GET 只展示表单、POST 带 antiforgery；后通道登出静默</td><td>IDP-002 / IDP-004</td></tr><tr><td><code>/login</code>（验证码 Tab）</td><td>短信验证码登录</td><td>S1-P1 · S1-B</td><td>identity</td><td>短信 OTP 一等因子（D5.3）；由 options.factors 驱动出现</td><td>YUE-006 / IDP-006</td></tr><tr><td><code>/login/forgot?flow=</code> → <code>/login/reset</code></td><td>找回密码</td><td>S1-P1 · S1-B</td><td>identity</td><td>短信 OTP 验证 → 新密码；成功吊销全部会话</td><td>YUE-006 / IDP-006</td></tr><tr><td><code>/login/mfa/enroll?flow=</code></td><td>TOTP 绑定（租户强制两步验证的首次登录）</td><td>S1-P0（7.4.1 E2E）· S1-B</td><td>identity</td><td>二维码 + 手动密钥 + 6 位校验；不可跳过</td><td>YUE-006 / IDP-006</td></tr><tr><td><code>/login/wecom?flow=</code></td><td>企业微信工作台免登中转</td><td>S1-P0（7.4.2）· S1-B</td><td>identity</td><td>UA 识别 → <code>ExchangeImplicitAsync</code>；未绑定 → bind；多租户先反查</td><td>YUE-006 / IDP-008</td></tr><tr><td><code>/device</code> → <code>/device/confirm?flow=</code> → <code>/device/done</code></td><td>设备码授权（<code>qian login</code>，RFC 8628）</td><td>条件：Q22 拍板后随 IDP-012（候选号）升 S1-P0</td><td>identity</td><td>输入 user_code → 登录 → 同意 → 回终端</td><td>IDP-012（候选）/ YUE-006</td></tr><tr><td><code>/consent?flow=</code></td><td>授权同意（第三方 / CLI / Agent 客户端）</td><td>条件：Q5 / Q22 / Q25 拍板后随 IDP-012</td><td>identity</td><td>展示 client / scope / resource / 委托 / 有效期；每次询问</td><td>IDP-012（候选）/ YUE-006</td></tr><tr><td><code>http://127.0.0.1:{port}/callback</code></td><td>CLI 本地完成页（loopback PKCE，RFC 8252 §7.3）</td><td>条件：同上</td><td>cli</td><td>静态 HTML，令牌不显示</td><td>IDP-012（候选）</td></tr><tr><td><code>/login</code>（Captcha 槽位）</td><td>自托管图形验证码</td><td>S1-P2</td><td>identity</td><td>策略开关或 <code>AUTH_CAPTCHA_REQUIRED</code> 后插入；需新增组件</td><td>YUE-006 / IDP-003</td></tr><tr><td><code>/login</code>（邮箱验证码渠道）</td><td>邮箱 OTP</td><td>待 Q20（默认建议「加，S1-B」）</td><td>identity</td><td>与短信共用 Tab，Segmented 切渠道；单渠道时不渲染 Segmented</td><td>IDP-006</td></tr><tr><td><code>/connect/error</code></td><td>授权请求无效终态页</td><td>S1-P1</td><td>identity</td><td>invalid_client / redirect_uri 不匹配 / invalid_target 等不可回跳错误（OIDC Core 1.0 §3.1.2.6）</td><td>IDP-002</td></tr><tr><td>（外壳）</td><td>闲置预警弹窗</td><td>S1-P1</td><td>shell</td><td>租户策略有空闲超时时提前 60s 预警（WCAG 2.2.1）</td><td>YUE-002 / IDP-006</td></tr><tr><td><code>/login</code>（连接器新条目）</td><td>钉钉 / 飞书 / 微信网站扫码</td><td>S2</td><td>identity</td><td>只是 <code>options.connectors</code> 新条目，无新页面</td><td>S2 连接器任务</td></tr><tr><td><code>/account/security/authorizations</code></td><td>已授权的应用与 Agent 客户端（查看 / 吊销）</td><td>S2</td><td>shell</td><td>同意页承诺的撤销途径</td><td>S2</td></tr><tr><td><code>/login</code>（邮箱域发现、品牌登录域、Passkey、扫码登 PC、恢复码）</td><td>HRD / 品牌 / Passkey</td><td>S3</td><td>identity</td><td>只换登录页宿主不改 issuer（Q4）</td><td>S3</td></tr></tbody></table></div>
+<p>个人中心（资料 / 改密 / 社交账号绑定解绑 / TOTP 管理 / 会话列表）归 IDP-006「个人中心最小集」，不在本页族（§7）。</p>
+<h2 class="rp-toc-include" id="3-端到端流程"><a href="#3-端到端流程" class="rp-header-anchor rp-link" aria-label="链接到 3 端到端流程">#</a>3 端到端流程</h2>
+<h3 class="rp-toc-include" id="31-人类登录全流程"><a href="#31-人类登录全流程" class="rp-header-anchor rp-link" aria-label="链接到 3.1 人类登录全流程">#</a>3.1 人类登录全流程</h3>
+<div></div>
+<h3 class="rp-toc-include" id="32-agent--cli-取令牌与同意流程"><a href="#32-agent--cli-取令牌与同意流程" class="rp-header-anchor rp-link" aria-label="链接到 3.2 Agent / CLI 取令牌与同意流程">#</a>3.2 Agent / CLI 取令牌与同意流程</h3>
+<div></div>
+<h2 class="rp-toc-include" id="4-逐页规格"><a href="#4-逐页规格" class="rp-header-anchor rp-link" aria-label="链接到 4 逐页规格">#</a>4 逐页规格</h2>
+<p>通用约定（各页不重复）：</p>
+<ul>
+<li>版式：发行方页面统一 <code>AuthLayout</code>（需新增，放 <code>@yue/shell</code>）——页面背景 <code>--yue-background</code>；≥ <code>--yue-p-breakpoint-md</code>（48rem）单张 <code>Card</code> 居中、宽 25rem（同意页 32rem）；≥ <code>--yue-p-breakpoint-lg</code>（64rem）左侧品牌栏约 40%（<code>--yue-sidebar</code> / <code>--yue-sidebar-foreground</code>，只放平台标识、名称、一句定位、环境标识）；&lt; <code>--yue-p-breakpoint-sm</code>（40rem，含 375px）单列、无卡片边框与阴影、16px 侧边距、品牌栏收成顶部一行、按钮全宽。三种断点共用同一 DOM。</li>
+<li>标题层级：每页一个 <code>h1</code>（可见或 <code>sr-only</code>，如「登录到 {租户名}」）；<code>CardTitle</code> 渲染为 <code>h3</code>、<code>Result</code> 标题为 <code>h2</code>，都不作页面标题。</li>
+<li>表单：登录 / 改密 / 找回密码 / 绑定表单经 <code>@yue/form</code>（shell → form 是分层规则唯一例外）；<code>INPUT_INVALID</code> 的 <code>errors[].pointer</code> 由 <code>@yue/form</code> 统一映射到 <code>FieldError</code>；提交失败焦点移到首个无效控件（<code>aria-invalid</code> + <code>aria-describedby</code>），只有整体错误（锁定、仅企业 IdP、服务不可用）才把焦点移到 <code>tabIndex=-1</code> 的 Alert 容器。</li>
+<li>错误展示：<code>AuthErrorNotice</code>（需新增，组合件）= <code>Alert tone=error role=&quot;alert&quot;</code> + <code>message</code> + 折叠行「错误编号 {trace_id}」（<code>Button variant=ghost size=sm</code>「复制」，图标需新增 copy）；<code>Alert</code> 内不放 muted 色文字（对比度单测不覆盖 muted on tone-bg）；倒计时不放进 <code>role=alert</code> 容器，单独 <code>aria-live=polite</code> 区域每 10 秒更新一次。</li>
+<li>消息出口：Toast / 确认走 <code>@yue/form</code> 的 <code>useMessage</code> / <code>useConfirm</code>（<code>@yue/core</code> 的 <code>Toast</code> 无 <code>tone</code>）。</li>
+<li>按钮：<code>Button</code> 变体只有 <code>primary | secondary | outline | ghost | destructive</code>；文本链接用 <code>variant=ghost size=sm</code>；高度沿用 <code>--yue-button-height</code>（36px，<code>size=lg</code> 40px），目标尺寸按 WCAG 2.2 2.5.8（≥ 24×24），不覆盖为 44px。</li>
+<li><code>data-testid</code>：<code>auth-&lt;page&gt;-&lt;element&gt;</code>（如 <code>auth-login-identifier</code>、<code>auth-login-submit</code>、<code>auth-login-connector-{connectorId}</code>、<code>auth-mfa-code</code>、<code>auth-select-tenant-item-{membershipId}</code>），不含用户数据；连接器 id 可以、displayName 不行。</li>
+<li>加载：<code>getLoginOptions</code> / <code>getFlow</code> 未返回前 <code>Skeleton</code>（<code>aria-hidden</code>）占位，避免方式闪烁；提交中 <code>Button loading</code>（自带 <code>aria-busy</code> 与 spinner，不再嵌 <code>Spinner</code>），字段 <code>readOnly</code>。</li>
+<li>文案：zh-CN 为主，关键处给 en-US；zh-TW 由 <code>auth.*</code> 命名空间按 <code>@yue/sdk</code> 内置用词（登入 / 載入 / 搜尋 / 重新整理）翻译，通用键复用 <code>common.cancel</code> / <code>common.retry</code> / <code>common.unauthorized</code>；按钮内文案不换行，en-US 长句在 25rem 卡内允许两行。</li>
+</ul>
+<h3 class="rp-toc-include" id="41-登录页-loginflows1-p0"><a href="#41-登录页-loginflows1-p0" class="rp-header-anchor rp-link" aria-label="链接到 4.1 登录页 /login?flow=（S1-P0）">#</a>4.1 登录页 <code>/login?flow=</code>（S1-P0）</h3>
+<p><strong>用途</strong>：统一登录入口；按 <code>login-options</code> 渲染因子与连接器；承载锁定后态、延时、仅企业 IdP、租户不可登录、会话失效回落、回调错误等策略态。</p>
+<p><strong>版式</strong>：右列（或单列）自上而下：租户区 → 提示区（Alert）→ 登录卡（Card）→ 连接器区 → 页脚。</p>
+<p><strong>元素清单</strong>（自上而下）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>元素</th><th>@yue 组件</th><th>说明</th></tr></thead><tbody><tr><td>品牌栏</td><td>文本 + <code>Avatar</code></td><td>平台标识与名称来自 <code>window.__APP_CONF__.brand</code>；S3 才接租户 <code>data-brand</code></td></tr><tr><td>租户区</td><td><code>Avatar</code> / <code>AvatarFallback</code> + 文本 + <code>Button ghost sm</code>「切换租户」</td><td>有 <code>tenantHint</code> 时显示租户 LOGO + 名称；无则显示平台名 + <code>Button ghost sm</code>「指定租户」</td></tr><tr><td>租户号步骤（折叠）</td><td><code>Field</code> + <code>FieldLabel</code>「租户号」+ <code>Input</code>（<code>autocomplete=organization</code>，小写字母数字）+ <code>FieldDescription</code>「由管理员提供；企业员工一般需要填写」+ <code>Checkbox</code>「在此设备记住租户号」+ <code>Button secondary</code>「继续」</td><td>未知 / 未挂载 / 不存在的租户号回落平台默认方式，不报错</td></tr><tr><td>提示区</td><td><code>Alert</code>（<code>tone</code> 按态；错误传 <code>role=&quot;alert&quot;</code>）</td><td>会话失效原因、回调错误、仅企业 IdP、租户不可登录、锁定后态</td></tr><tr><td>登录卡</td><td><code>Card</code> + <code>CardHeader</code>（<code>CardTitle</code>「登录」+ <code>CardDescription</code> 租户名或平台名）+ <code>CardContent</code></td><td>页面 <code>h1</code> 为 sr-only「登录到 {租户名 / 平台名}」</td></tr><tr><td>方式切换</td><td><code>Tabs</code> + <code>TabsList</code> + <code>TabsTab</code>「密码」「验证码」</td><td>只有一种因子或 idpOnly 时不渲染 Tabs</td></tr><tr><td>密码面板</td><td><code>Field</code>「账号」<code>Input</code>（<code>autocomplete=username</code>，占位「用户名 / 手机号 / 邮箱」）；<code>Field</code>「密码」<code>InputPassword</code>（<code>autocomplete=current-password</code>，<code>showLabel</code>「显示密码」<code>hideLabel</code>「隐藏密码」）；Captcha 槽位（需新增 <code>CaptchaField</code>）；<code>Button ghost sm</code>「忘记密码」；<code>Button primary</code> 全宽「登录」</td><td>密码允许粘贴；不做前端哈希</td></tr><tr><td>验证码面板（S1-P1）</td><td><code>Segmented</code>「手机」「邮箱」（仅两渠道都启用时）；<code>Field</code>「手机号」<code>Input</code>（<code>autocomplete=tel inputmode=tel</code>）+ <code>Button outline</code>「获取验证码」（倒计时）；<code>Field</code>「验证码」<code>PinInput length=6</code>（<code>label</code>「6 位验证码」<code>getSlotLabel</code>「第 {i} 位」，<code>autocomplete=one-time-code</code>）；<code>Button primary</code>「登录」</td><td>6 位填满不自动提交（WCAG 3.2.2）</td></tr><tr><td>连接器区</td><td><code>Separator</code> + muted 文本「或使用企业身份源」+ <code>Button outline</code> 全宽 × N「使用 {displayName} 登录」</td><td>列表只来自 <code>options.connectors</code>；图标需新增（Icon 入口无品牌图形），S1 可纯文字；idpOnly 时该区成为主体</td></tr><tr><td>页脚</td><td><code>Select</code>（<code>aria-label</code>「语言」，zh-CN / zh-TW / en-US）、<code>IconButton</code>（主题三态 light / dark / system，经 <code>@yue/tokens</code> <code>ThemeController</code>，图标需新增）、<code>options.links</code> 帮助 / 隐私、版本号</td><td>主题偏好写 localStorage <code>yue-theme</code>（非敏感）</td></tr><tr><td>技术详情（折叠）</td><td><code>Accordion</code>「技术详情」+ <code>Descriptions</code>（发行方、flow、client_id、trace_id、环境）</td><td>非生产默认展开；生产默认折叠，由 <code>__APP_CONF__.support.showTechDetails</code> 门控（D7）</td></tr></tbody></table></div>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code（提案）</th></tr></thead><tbody><tr><td>默认</td><td>无 tenantHint</td><td>平台默认方式（密码 + 平台级连接器）；Tab 停在上次方式（localStorage 仅偏好）</td><td>—</td></tr><tr><td>加载 options</td><td>GET login-options 进行中</td><td>表单区 <code>Skeleton</code> × 3，不渲染按钮</td><td>—</td></tr><tr><td>options 失败</td><td>503 / 网络</td><td><code>Result tone=error</code>「无法连接登录服务」+「重试」</td><td><code>UNAVAILABLE</code></td></tr><tr><td>单一方式</td><td><code>options.factors</code> 只有密码且无连接器</td><td>不渲染 Tabs 与连接器区，版式不塌</td><td>—</td></tr><tr><td>仅企业 IdP</td><td><code>options.idpOnly</code>（需 tenantHint）</td><td>凭据卡不渲染；<code>Alert tone=info</code>「该租户仅允许通过企业身份源登录」+ 连接器按钮；不自动跳转</td><td>—</td></tr><tr><td>本地校验错误</td><td>空值 / 格式</td><td><code>FieldError</code>「请输入账号」「请输入密码」，焦点到首个无效控件</td><td>—</td></tr><tr><td>字段错误</td><td>400 <code>errors[]</code> 带 pointer</td><td>经 <code>@yue/form</code> 落到 <code>#/identifier</code> / <code>#/secret</code> / <code>#/captcha</code></td><td><code>INPUT_INVALID</code></td></tr><tr><td>凭据无效</td><td>密码错 / 账号不存在 / 锁定中 / 延时中 / 无 tenantHint 的仅企业 IdP 账号</td><td><code>AuthErrorNotice</code>「账号或密码不正确」；密码框清空并聚焦；不显示剩余次数</td><td><code>AUTH_CREDENTIALS_INVALID</code>（422）</td></tr><tr><td>限流 / 延时</td><td>429 + <code>Retry-After</code></td><td><code>Alert tone=warn</code>「尝试过于频繁，请 {n} 秒后重试」；主按钮 <code>disabled</code> 至归零；倒计时区 <code>aria-live=polite</code> 每 10 秒播报</td><td><code>RATE_LIMITED</code>（既有，429）</td></tr><tr><td>需图形验证码</td><td>策略开关或阈值</td><td>插入 <code>CaptchaField</code> 并聚焦；「请输入图形验证码后再试」</td><td><code>AUTH_CAPTCHA_REQUIRED</code>（422）</td></tr><tr><td>图形验证码错误</td><td>校验失败</td><td><code>FieldError</code>「图形验证码不正确」+ 自动换图</td><td><code>AUTH_CAPTCHA_INVALID</code>（422）</td></tr><tr><td>账号已锁定（凭据正确后）</td><td>阈值触发</td><td><code>Alert tone=error role=alert</code>「账号已锁定。{unlockHint}」（<code>unlockHint</code> 来自 message：「请联系租户管理员解锁」或「请稍后再试」，不给具体解锁时间）；主按钮 <code>disabled</code>；连接器按钮可见但提交同样得到锁定态</td><td><code>AUTH_ACCOUNT_LOCKED</code>（422）</td></tr><tr><td>自然人 / 成员已停用（凭据正确后）</td><td>状态</td><td><code>AuthErrorNotice</code>「账号已停用，请联系租户管理员」</td><td><code>AUTH_PERSON_DISABLED</code> / <code>AUTH_MEMBERSHIP_DISABLED</code>（422）</td></tr><tr><td>仅企业 IdP（凭据正确后或策略拒绝）</td><td>D5.13 服务端强制</td><td>重取 options 并切换为「仅企业 IdP」态；文案同上</td><td><code>AUTH_METHOD_NOT_ALLOWED</code>（422）</td></tr><tr><td>租户不可登录（凭据正确后）</td><td>待激活 / 宽限 / 只读 / 冻结 / 注销</td><td><code>Alert tone=warn</code>「{租户名} 当前不可登录（{status}），请联系管理员」；status 词表：待激活 / 宽限期 / 只读 / 已冻结 / 已注销</td><td><code>AUTH_TENANT_NOT_ACTIVE</code>（422）</td></tr><tr><td>flow 失效</td><td>超时 / Cookie 不匹配</td><td>整卡 <code>Result tone=warn</code>「本次登录已超时，请重新开始」+「重新开始」</td><td><code>AUTH_FLOW_EXPIRED</code>（422）/ <code>NOT_FOUND</code></td></tr><tr><td>下一步</td><td>signin 返回 <code>next</code></td><td>mfa → <code>/login/mfa</code>；enroll_totp → <code>/login/mfa/enroll</code>；select_tenant → <code>/login/select-tenant</code>；change_password → <code>/login/change-password</code>；done → POST complete → <code>location.assign(return_to)</code></td><td>—</td></tr><tr><td>会话失效回落</td><td>服务端 302 到 <code>/login</code> 并写一次性登出提示 Cookie；降级为 <code>?reason=</code> 白名单枚举</td><td><code>Alert tone=info</code>：password_changed「密码已修改，请重新登录」/ disabled「账号已被停用」/ locked「账号已被锁定」/ tenant_suspended「所在租户已冻结」/ tenant_expired「所在租户已进入宽限期」/ revoked_by_admin「管理员已将您下线」/ concurrent_limit「该账号已在其他设备登录，当前设备已下线」/ connector_disabled「登录方式已变更，请重新登录」/ 未知「请重新登录」；账号字段不预填</td><td>—</td></tr><tr><td>回调错误</td><td>连接器回调失败后 302 回本页</td><td><code>AuthErrorNotice</code>「企业身份源登录未完成」+ message</td><td>见 §4.5</td></tr><tr><td>离线 / 5xx / 非 ErrorDetail</td><td>网络</td><td><code>AuthErrorNotice</code>「服务暂不可用，请稍后重试」+「重试」</td><td><code>INTERNAL</code> / <code>UNAVAILABLE</code></td></tr><tr><td>已登录态（S1-P1）</td><td>SSO Cookie 有效且 RP 未要求 <code>prompt=login</code></td><td>卡顶 <code>Avatar</code> +「以 {displayName} 继续」<code>Button primary</code> +「切换账号」<code>Button ghost sm</code>；<code>prompt=login</code> / <code>max_age</code> 过期时不出现此态，必须重新认证（OIDC Core 1.0 §3.1.2.1）</td><td>—</td></tr></tbody></table></div>
+<p><strong>文案</strong>（zh-CN / en-US）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>键</th><th>zh-CN</th><th>en-US</th></tr></thead><tbody><tr><td><code>auth.login.title</code></td><td>登录</td><td>Sign in</td></tr><tr><td><code>auth.login.tenantCode</code></td><td>租户号</td><td>Tenant ID</td></tr><tr><td><code>auth.login.tenantCode.hint</code></td><td>由管理员提供；企业员工一般需要填写</td><td>Provided by your administrator</td></tr><tr><td><code>auth.login.identifier</code></td><td>账号</td><td>Account</td></tr><tr><td><code>auth.login.identifier.placeholder</code></td><td>用户名 / 手机号 / 邮箱</td><td>Username, phone or email</td></tr><tr><td><code>auth.login.password</code></td><td>密码</td><td>Password</td></tr><tr><td><code>auth.login.submit</code></td><td>登录</td><td>Sign in</td></tr><tr><td><code>auth.login.forgot</code></td><td>忘记密码</td><td>Forgot password</td></tr><tr><td><code>auth.login.sendCode</code></td><td>获取验证码</td><td>Send code</td></tr><tr><td><code>auth.login.resend</code></td><td>{n} 秒后重发</td><td>Resend in {n}s</td></tr><tr><td><code>auth.login.or</code></td><td>或使用企业身份源</td><td>Or continue with your organization</td></tr><tr><td><code>auth.login.connector</code></td><td>使用 {name} 登录</td><td>Continue with {name}</td></tr><tr><td><code>auth.error.credentials</code></td><td>账号或密码不正确</td><td>Incorrect account or password</td></tr><tr><td><code>auth.error.rateLimited</code></td><td>尝试过于频繁，请 {n} 秒后重试</td><td>Too many attempts. Try again in {n}s</td></tr><tr><td><code>auth.error.locked</code></td><td>账号已锁定。{unlockHint}</td><td>Account locked. {unlockHint}</td></tr><tr><td><code>auth.error.idpOnly</code></td><td>该租户仅允许通过企业身份源登录</td><td>This tenant only allows sign-in through its identity provider</td></tr><tr><td><code>auth.error.tenantNotActive</code></td><td>{tenant} 当前不可登录（{status}），请联系管理员</td><td>{tenant} is not available for sign-in ({status}). Contact your administrator</td></tr><tr><td><code>auth.error.traceId</code></td><td>错误编号 {trace_id}</td><td>Reference {trace_id}</td></tr><tr><td><code>auth.error.unavailable</code></td><td>服务暂不可用，请稍后重试</td><td>Service unavailable. Please try again later</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：</p>
+<ul>
+<li>连接器与因子只来自服务端 <code>login-options</code>；前端不持有连接器配置、secret、IdP 地址；<code>login-options</code> 匿名端点按 IP 限流；未知租户号回落默认集不报错，<code>tenantHint</code> 只是租户号，不解析租户状态。</li>
+<li>凭据校验前一律 <code>AUTH_CREDENTIALS_INVALID</code>；锁定 / 停用 / 租户状态 / 仅企业 IdP 只在凭据正确后可见；<code>RATE_LIMITED</code> 以（IP，标识哈希）为键，对不存在的标识同样计数与返回；账号维度的延时在服务端静默执行（统一时延），不回传秒数。</li>
+<li>同源 POST，antiforgery 走 cookie-to-header（<code>GET /account/antiforgery</code> 下发，请求头 <code>RequestVerificationToken</code>）；Cookie <code>qian.identity.signin</code> / <code>qian.identity.flow</code> 建议 <code>__Host-</code> 前缀、<code>Secure</code>、<code>HttpOnly</code>、<code>SameSite=Lax</code>（连接器回调为顶级 GET 回跳，Strict 不可用）；响应 <code>Cache-Control: no-store</code>、<code>Referrer-Policy: no-referrer</code>、CSP <code>frame-ancestors &#x27;none&#x27;</code>；<code>/login*</code> 与 <code>/connect*</code> 同一组安全头（现有中间件只覆盖 <code>/connect</code> 与 <code>/.well-known</code>，需扩）。</li>
+<li>URL 只允许出现 <code>flow</code>（不透明、非机密、与 HttpOnly Cookie 绑定）、<code>tenant</code>（租户号）、<code>reason</code>（白名单枚举）；<code>return_to</code> 只接受服务端 flow 记录；不回显任何 URL 参数原文。</li>
+<li>localStorage 只存租户号与上次方式与主题偏好；账号、密码、令牌一律不落盘；S1 不做「记住我 / 记住账号」。</li>
+<li>Captcha 自托管（D5.10，不接外部 SaaS）；图片不含账号信息；发码端点平台级防线（每 IP 与全局预算、未知标识不发码且同响应、尝试上限）。</li>
+</ul>
+<p><strong>无障碍要点</strong>：<code>Field</code> 自动关联 label / description / error；<code>autocomplete</code> 用 WHATWG HTML Living Standard token；Tabs 方向键漫游；连接器按钮可访问名称含身份源名；图形验证码无音频替代（WCAG 2.2 1.1.1 / 3.3.8 缺口）→ 默认关、只按策略开、优先延时 / 锁定（§7）；对比度由 <code>@yue/tokens</code> 单测覆盖的语义成对令牌保证；<code>motion-reduce</code> 下无过渡。</p>
+<p><strong>接触点</strong>：<code>AuthProvider.interaction.getLoginOptions({ tenantHint })</code> → <code>GET /account/login-options?tenant=</code>；<code>getFlow(flow)</code> → <code>GET /account/flows/{flow}</code>；<code>getAntiforgery()</code>；<code>signIn(flow, { factor: &#x27;password&#x27; | &#x27;sms_otp&#x27; | &#x27;email_otp&#x27;, identifier, secret, captchaTicket? })</code> → <code>POST /account/flows/{flow}/signin</code>；<code>sendOtp(flow, { channel, identifier, purpose: &#x27;login&#x27; })</code> → <code>POST /account/flows/{flow}/otp</code>；<code>getCaptcha()</code> → <code>GET /account/captcha</code>；<code>beginConnector(flow, connectorId)</code>；<code>complete(flow)</code> → <code>POST /account/flows/{flow}/complete</code>（返回 <code>return_to</code>）。路径为提案，由 IDP-003 / 006 / 007 登记。</p>
+<h3 class="rp-toc-include" id="42-第二因子验证-loginmfaflows1-p0totp-随-idp-006"><a href="#42-第二因子验证-loginmfaflows1-p0totp-随-idp-006" class="rp-header-anchor rp-link" aria-label="链接到 4.2 第二因子验证 /login/mfa?flow=（S1-P0；TOTP 随 IDP-006）">#</a>4.2 第二因子验证 <code>/login/mfa?flow=</code>（S1-P0；TOTP 随 IDP-006）</h3>
+<p><strong>用途</strong>：主因子通过后按目标租户策略 step-up；S1 只有 TOTP（PRD 13.3.2：短信 / 邮箱 OTP 作第二因子、Passkey、恢复码 S3）；<code>amr</code> / <code>acr</code> 由此确定。</p>
+<p><strong>版式</strong>：同外框；单任务卡：返回行 → 身份摘要 → 卡片（PinInput）→ 帮助。</p>
+<p><strong>元素清单</strong>：<code>Button ghost sm</code>「返回登录」（放弃 flow）；<code>Avatar</code> + 掩码账号（服务端下发）；<code>Card</code> + <code>CardTitle</code>「验证您的身份」+ <code>CardDescription</code>「打开身份验证器应用，输入 6 位动态码」；<code>Field</code> + <code>PinInput length=6</code>（<code>autocomplete=one-time-code inputmode=numeric</code>）；<code>Button primary</code> 全宽「验证」；<code>Button ghost sm</code>「无法使用验证器？」→ <code>Popover</code>「请联系租户管理员重置两步验证」；<code>AuthErrorNotice</code>。不渲染 <code>Segmented</code>（S1 单因子）；「30 天内此设备不再验证」不做（§7）。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>默认</td><td>进入</td><td>第一格聚焦；填满不自动提交</td><td>—</td></tr><tr><td>验证中</td><td>提交</td><td>按钮 <code>loading</code>，PinInput <code>readOnly</code></td><td>—</td></tr><tr><td>动态码错误</td><td>校验失败</td><td><code>FieldError</code>「动态码不正确，请确认设备时间已同步」；清空并聚焦第一格；计入阈值</td><td><code>AUTH_TOTP_INVALID</code>（422）</td></tr><tr><td>挑战过期</td><td><code>ExpiresAt</code> 到</td><td><code>Result tone=warn</code>「验证已超时，请重新登录」+「返回登录」</td><td><code>AUTH_CHALLENGE_EXPIRED</code>（422）</td></tr><tr><td>尝试超限</td><td>阈值</td><td><code>Alert tone=warn</code> + 按钮 <code>disabled</code> 至 <code>Retry-After</code></td><td><code>RATE_LIMITED</code></td></tr><tr><td>锁定</td><td>阈值触发锁定</td><td>同 §4.1 锁定态</td><td><code>AUTH_ACCOUNT_LOCKED</code></td></tr><tr><td>成功</td><td>校验通过</td><td>按 <code>next</code> 续接（select_tenant / change_password / done）</td><td>—</td></tr></tbody></table></div>
+<p><strong>文案</strong>：「验证您的身份」/ Verify it&#x27;s you；「6 位动态码」/ 6-digit code；「验证」/ Verify；「动态码不正确，请确认设备时间已同步」/ Incorrect code. Check your device time；「无法使用验证器？」/ Can&#x27;t use your authenticator?</p>
+<p><strong>安全要点</strong>：challengeId 只在 flow（服务端）与同源 Cookie，不进 URL；TOTP（RFC 6238，IETF 2011-05）校验、时间窗与重放防护在服务端；错误次数计入统一阈值；成功后 <code>amr=totp</code>、<code>acr</code> 提升写入会话 Cookie 供 step-up 判定。</p>
+<p><strong>无障碍要点</strong>：<code>PinInput</code> 传 <code>label</code> 与 <code>getSlotLabel</code>（第 1 格依赖 sr-only 整组 label）；错误后焦点回第一格；<code>Popover</code> 键盘可开关。</p>
+<p><strong>接触点</strong>：<code>verifyFactor(flow, { factor: &#x27;totp&#x27;, code })</code> → <code>POST /account/flows/{flow}/challenge</code>（IDP-006 <code>IAuthenticatorFactor.Verify</code> → <code>AuthenticationResult(amr, acr)</code>）。</p>
+<h3 class="rp-toc-include" id="43-租户选择-loginselect-tenantflows1-p0"><a href="#43-租户选择-loginselect-tenantflows1-p0" class="rp-header-anchor rp-link" aria-label="链接到 4.3 租户选择 /login/select-tenant?flow=（S1-P0）">#</a>4.3 租户选择 <code>/login/select-tenant?flow=</code>（S1-P0）</h3>
+<p><strong>用途</strong>：命中多个 Membership（成员）时选定 <code>tenant_id</code> / <code>membership_id</code>，以 5 分钟租户选择令牌（11.2 词表）换正式签发；运行中切换租户复用同一列表部件（§4.9）。</p>
+<p><strong>版式</strong>：同外框；卡内：说明 + 倒计时 → （&gt; 8 项时）搜索框 → 单选列表 → 主按钮 → 退出登录。</p>
+<p><strong>元素清单</strong>：<code>CardTitle</code>「选择要进入的租户」+ <code>CardDescription</code>「您的账号属于多个租户」；倒计时文本「请在 {m:ss} 内完成选择」（<code>CountdownText</code> 需新增；独立 <code>aria-live=polite</code>，只在 60s / 30s / 10s / 0 播报）；<code>Input</code>（<code>aria-label</code>「搜索租户」，&gt; 8 项时）；<code>RadioGroup</code> + 每项以 <code>Label</code> 包整行的 <code>Radio</code>：<code>Avatar</code> / <code>AvatarFallback</code>（首字）+ 租户名 + 租户号（mono）+ 成员显示名 + <code>Badge tone=info</code>「租户管理员」+ 状态 <code>Badge</code>（<code>tone=warn</code>「宽限期」/「只读」，<code>tone=neutral</code>「已冻结」/「待激活」）+ 可见原因文本（不用 Tooltip）；上次使用项 <code>Tag</code>「上次使用」并预选（不自动提交）；<code>Button primary</code> 全宽「进入」；<code>Button ghost sm</code>「退出登录」。375px 下状态 Badge 换到第二行。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>加载</td><td>GET flow</td><td><code>Skeleton</code> × 3</td><td>—</td></tr><tr><td>默认</td><td>列表来自登录响应</td><td>按服务端顺序（最近使用优先）；预选上次使用</td><td>—</td></tr><tr><td>提交中</td><td>点「进入」</td><td>按钮 <code>loading</code>「正在进入 {租户名}…」，其余禁用</td><td>—</td></tr><tr><td>禁用项</td><td>租户 / 成员不可用</td><td><code>Radio disabled</code> + Badge + 可见原因「请联系管理员」；服务端同样拒绝</td><td><code>AUTH_TENANT_NOT_ACTIVE</code> / <code>AUTH_MEMBERSHIP_DISABLED</code></td></tr><tr><td>仅企业 IdP 租户经密码进入</td><td>策略</td><td>该项显示「需企业账号登录」+ <code>Button ghost sm</code>「用企业账号登录」→ <code>beginConnector</code></td><td><code>AUTH_METHOD_NOT_ALLOWED</code></td></tr><tr><td>选择超时</td><td>倒计时归零 / 服务端</td><td>整卡 <code>Result tone=warn</code>「选择已超时，请重新登录」+「重新登录」；不静默跳转</td><td><code>AUTH_SELECTION_EXPIRED</code>（422）</td></tr><tr><td>全部不可用</td><td>零可用项</td><td><code>Result tone=warn</code>「没有可进入的租户，请联系管理员」+「退出登录」</td><td>—</td></tr><tr><td>目标租户要求 MFA</td><td>策略更严</td><td>跳 <code>/login/mfa</code> 后回签发</td><td>—</td></tr><tr><td>成功</td><td>选定</td><td>服务端签 Cookie → <code>next</code>（change_password 可能在此之后）→ done</td><td>—</td></tr></tbody></table></div>
+<p><strong>文案</strong>：「选择要进入的租户」/ Choose a tenant；「请在 {m:ss} 内完成选择」/ Choose within {m:ss}；「进入」/ Continue；「选择已超时，请重新登录」/ Selection timed out. Please sign in again。</p>
+<p><strong>安全要点</strong>：选择令牌留在服务端 flow 记录，页面只提交 <code>membership_id</code>，不进 JS 内存、URL 或存储；列表只含本人 Membership；冻结 / 到期租户的拒绝在服务端（IDP-003 R95）；切换 = 服务端重签（<code>membership_id</code> 变化、<code>identity_revision</code> 重取），不是前端改请求头。</p>
+<p><strong>无障碍要点</strong>：每项可访问名称 = 「{租户名}，{成员名}{，租户管理员}{，已冻结}」；<code>RadioGroup</code> 方向键移动、Space 选中、Enter 提交；禁用项原因为常驻可见文本并 <code>aria-describedby</code>；归零后 <code>Result</code> 外层 <code>tabIndex=-1</code> 容器获得焦点。</p>
+<p><strong>接触点</strong>：<code>selectTenant(flow, { membershipId })</code> → <code>POST /account/flows/{flow}/select-tenant</code>（IDP-003）。</p>
+<h3 class="rp-toc-include" id="44-强制修改密码-loginchange-passwordflows1-p0"><a href="#44-强制修改密码-loginchange-passwordflows1-p0" class="rp-header-anchor rp-link" aria-label="链接到 4.4 强制修改密码 /login/change-password?flow=（S1-P0）">#</a>4.4 强制修改密码 <code>/login/change-password?flow=</code>（S1-P0）</h3>
+<p><strong>用途</strong>：初始密码 / 管理员重置 / 到期的强制改密；不可取消、不可跳过、完成前不签发会话 Cookie；刷新或直访其他路由都回到本步。</p>
+<p><strong>版式</strong>：全页单任务；原因 Alert → 卡片（三字段 + 策略清单）→ 退出登录（唯一出口）。</p>
+<p><strong>元素清单</strong>：<code>Alert tone=info role=status</code>「首次登录或管理员重置密码后必须设置新密码，完成前无法进入系统」；<code>CardTitle</code>「设置新密码」；<code>Field</code>「当前密码」<code>InputPassword</code>（<code>autocomplete=current-password</code>，按 <code>options.requiresCurrentPassword</code> 渲染）；<code>Field</code>「新密码」<code>InputPassword</code>（<code>autocomplete=new-password</code>）+ <code>PasswordPolicyChecklist</code>（需新增：<code>ul</code> 每项 <code>Icon check / minus</code> + 文本「已满足 / 未满足」，规则来自 <code>options.passwordPolicy</code>：最少 {n} 位、至少 {k} 类字符、不与最近 {h} 次相同、不含账号）；<code>Field</code>「确认新密码」<code>InputPassword</code>；<code>Button primary</code> 全宽「设置并继续」；<code>Button ghost sm</code>「退出登录」。不做强度条。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>默认</td><td>进入</td><td>新密码聚焦；清单全部「未满足」，输入时翻转本地可判项；状态变化在 blur / 提交时汇总 <code>aria-live=polite</code> 播报</td><td>—</td></tr><tr><td>本地校验</td><td>两次不一致</td><td><code>FieldError</code>「两次输入的密码不一致」</td><td>—</td></tr><tr><td>策略违规</td><td>服务端</td><td><code>errors[]</code> pointer <code>#/new_password</code> 逐条映射到清单与 <code>FieldError</code></td><td><code>AUTH_PASSWORD_POLICY_VIOLATED</code>（422）</td></tr><tr><td>历史密码复用</td><td>服务端</td><td><code>FieldError</code>「不能与最近 {n} 次使用过的密码相同」</td><td><code>AUTH_PASSWORD_REUSED</code>（422）</td></tr><tr><td>当前密码错误</td><td>服务端</td><td><code>FieldError</code> 落 <code>#/current_password</code>；计入阈值</td><td><code>AUTH_CREDENTIALS_INVALID</code></td></tr><tr><td>限流</td><td>429</td><td><code>Alert tone=warn</code> + 倒计时</td><td><code>RATE_LIMITED</code></td></tr><tr><td>成功</td><td>写入</td><td><code>useMessage().success</code>「密码已更新，其他设备已退出登录」→ 按 <code>next</code> 续接</td><td>—</td></tr><tr><td>绕行</td><td>直访其他路由</td><td>服务端 302 回本页</td><td>—</td></tr></tbody></table></div>
+<p><strong>文案</strong>：「设置新密码」/ Set a new password；「设置并继续」/ Set and continue；「密码已更新，其他设备已退出登录」/ Password updated. Other devices have been signed out。</p>
+<p><strong>安全要点</strong>：新密码只在请求体，不回显；清单仅提示，策略权威在租户级密码策略（13.3.2）；改密触发 13.3.3 第 1 条（其他会话 ≤ 5s 失效），本页明示；当前设备会话是否豁免需 IDP-003 / 004 提供「吊销除当前 sid 外全部会话」语义（§6 新增验收）。</p>
+<p><strong>无障碍要点</strong>：三处密码开关各自独立且有 <code>aria-pressed</code> 与可见名称；无取消按钮但有「退出登录」，不构成键盘陷阱（WCAG 2.1.2）。</p>
+<p><strong>接触点</strong>：<code>changePassword(flow, { current?, next })</code> → <code>POST /account/flows/{flow}/password</code>（IDP-003；成功后服务端吊销其他会话，IDP-004）。</p>
+<h3 class="rp-toc-include" id="45-连接器出站中转与回调落点-loginconnectorconnectoridflows1-p0"><a href="#45-连接器出站中转与回调落点-loginconnectorconnectoridflows1-p0" class="rp-header-anchor rp-link" aria-label="链接到 4.5 连接器出站中转与回调落点 /login/connector/{connectorId}?flow=（S1-P0）">#</a>4.5 连接器出站中转与回调落点 <code>/login/connector/{connectorId}?flow=</code>（S1-P0）</h3>
+<p><strong>用途</strong>：<code>BeginChallengeAsync</code> 的 302 出口与 <code>/connect/callback/{connectorId}</code>（服务端统一校验 state / nonce，IDP-007）处理完成后的 UI 落点；页面只 GET flow 读 <code>next</code>，不接触上游 code / id_token。</p>
+<p><strong>版式</strong>：居中单屏：<code>h1</code> + <code>Spinner</code> + 手动继续按钮；错误时整卡替换为 <code>Result</code>。</p>
+<p><strong>元素清单</strong>：出站：<code>h1</code>「正在前往 {connectorName}…」+ <code>Spinner label</code>「正在跳转」+ <code>Button ghost sm</code>「若未自动跳转，点击继续」（3 秒后出现并获得焦点）+ <code>Button ghost sm</code>「返回登录」；回调处理态：<code>h1</code>「正在完成登录…」+ <code>Spinner</code>；错误态：<code>Result tone=error</code>（标题「无法通过 {connectorName} 登录」，description = <code>message</code>）+ <code>ButtonGroup</code>「重试」「返回登录」+ <code>AuthErrorNotice</code>。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>跳转中</td><td>POST begin → 302</td><td>Spinner；3 秒后出现手动按钮（WCAG 2.2.1 / 3.2.5）</td><td>—</td></tr><tr><td>回调处理中</td><td>服务端 302 回本页</td><td>GET flow 一次</td><td>—</td></tr><tr><td>state / nonce 无效</td><td>篡改 / 过期</td><td><code>Result</code>「登录请求已失效或被篡改，请重新开始」</td><td><code>AUTH_CONNECTOR_STATE_INVALID</code>（422）</td></tr><tr><td>上游取消</td><td><code>access_denied</code></td><td><code>Result tone=warn</code>「您在 {connectorName} 取消了登录」+「返回登录」</td><td><code>AUTH_CONNECTOR_DENIED</code>（422）</td></tr><tr><td>上游换码失败</td><td>502 / 504</td><td><code>Result</code> +「重试」；不自动重试</td><td><code>BAD_GATEWAY</code> / <code>GATEWAY_TIMEOUT</code></td></tr><tr><td>连接器不存在或未挂载</td><td>404</td><td><code>Result</code>「该登录方式不可用」，不区分两种原因</td><td><code>NOT_FOUND</code></td></tr><tr><td>租户不可登录</td><td>凭据后</td><td><code>AuthErrorNotice</code></td><td><code>AUTH_TENANT_NOT_ACTIVE</code></td></tr><tr><td>下一步</td><td><code>next</code></td><td>bind → <code>/login/bind</code>；select_tenant / mfa / done 同 §4.1</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：出站 URL 由服务端生成并 302，前端只触发；回调完成后 <code>history.replaceState</code> 清除 query；<code>return_to</code> 只来自服务端 flow 记录；上游 <code>error_description</code> 视为不可信数据，只在技术详情折叠区转义展示并截断 200 字。</p>
+<p><strong>无障碍要点</strong>：进度文本 <code>role=status</code>；错误态标题容器获得焦点；「重试」「返回登录」为真实按钮。</p>
+<p><strong>接触点</strong>：<code>beginConnector(flow, connectorId)</code> → <code>POST /account/flows/{flow}/connectors/{connectorId}/begin</code>（返回 <code>redirect_uri</code>）；回调由服务端 <code>/connect/callback/{connectorId}</code> 处理后页面只调 <code>getFlow</code>。</p>
+<h3 class="rp-toc-include" id="46-确认绑定-loginbindflows1-p0"><a href="#46-确认绑定-loginbindflows1-p0" class="rp-header-anchor rp-link" aria-label="链接到 4.6 确认绑定 /login/bind?flow=（S1-P0）">#</a>4.6 确认绑定 <code>/login/bind?flow=</code>（S1-P0）</h3>
+<p><strong>用途</strong>：首次经连接器登录且未绑定：展示外部身份 → 登录已有账号（新鲜一因子认证）→ 显式确认；同租户重复绑定被拒（D5.11、IDP-007 验收 1）。</p>
+<p><strong>版式</strong>：单卡两段：外部身份 <code>Descriptions</code> → 步骤 A 内嵌登录（未认证）或步骤 B 确认区（已认证）→ 按钮行。</p>
+<p><strong>元素清单</strong>：<code>h1</code>「将企业账号与平台账号关联」；<code>Card</code> 内 <code>Descriptions</code>：来源（<code>connectorName</code> + <code>Badge</code>「OIDC」/「企业微信」）、显示名、掩码标识（服务端脱敏）、租户；步骤 A：复用 §4.1 的 Tabs + 表单（<code>intent=bind</code>，不渲染连接器区），<code>h2</code>「登录您的账号以完成关联」；步骤 B：<code>Avatar</code> +「将 {external} 关联到 {displayName}（{tenantName}）」+ <code>FieldDescription</code>「关联后可直接用 {connectorName} 登录此租户」+ <code>Checkbox</code>（必选）「我确认将上述企业身份与此账号关联」；<code>Button secondary</code>「取消」+ <code>Button primary</code>「确认关联」（Checkbox 未勾时 <code>disabled</code> 并 <code>aria-describedby</code> 说明）；JIT 分支仅 <code>options.allowJitProvision</code> 时渲染 <code>Button outline</code>「创建新账号并关联」（S1 默认关）；无账号文案「没有账号？请联系租户管理员开通」；倒计时「请在 {m:ss} 内完成」；<code>AuthErrorNotice</code>。步骤指示用 <code>ol</code> + <code>aria-current=step</code>，不用 Tabs。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>识别态 A / 确认态 B / 提交中</td><td>流程</td><td>步骤切换时 <code>h2</code> 获得焦点</td><td>—</td></tr><tr><td>同租户已绑定其他账号</td><td>唯一键冲突</td><td><code>Alert tone=error role=alert</code>「该企业身份已在本租户关联到其他账号」+「用已关联的账号登录」+「联系管理员」；不显示对方标识</td><td><code>AUTH_BINDING_CONFLICT</code>（409）</td></tr><tr><td>绑定票据过期</td><td>建议 10 分钟</td><td><code>Result</code>「关联请求已超时，请重新登录」+「重新开始」</td><td><code>AUTH_BINDING_EXPIRED</code>（422）</td></tr><tr><td>步骤 A 登录错误</td><td>同 §4.1</td><td>同 §4.1 各态</td><td>同 §4.1</td></tr><tr><td>已登录账号多租户</td><td>Membership &gt; 1</td><td>先 <code>/login/select-tenant</code> 再回确认（绑定键 tenant × connector × subject）</td><td>—</td></tr><tr><td>配额满（JIT）</td><td>服务端</td><td><code>AuthErrorNotice</code></td><td><code>CARDINALITY_USER_LIMIT</code>（既有，422）</td></tr><tr><td>成功</td><td>确认</td><td><code>useMessage().success</code>「已关联 {connectorName}」→ <code>next</code></td><td>—</td></tr><tr><td>取消</td><td>点取消</td><td>服务端作废票据 → <code>/login</code></td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：外部断言只存服务端并与 flow 绑定，JS 只拿脱敏展示值；绑定前要求新鲜认证（<code>auth_time</code> 在 N 分钟内）；不做静默自动绑定；冲突文案不泄露对方账号；绑定写审计与 <code>identity.login</code> 事件；JIT 受租户策略与配额约束。</p>
+<p><strong>无障碍要点</strong>：<code>Descriptions</code> 为 <code>dl</code> 语义；步骤切换 <code>h2</code> 聚焦；确认按钮文字明确（不是「确定」）。</p>
+<p><strong>接触点</strong>：<code>getFlow</code> 返回 <code>binding { connector, externalProfile(脱敏), allowJitProvision, expiresAt }</code>；<code>signIn(flow, …, intent: &#x27;bind&#x27;)</code>；<code>confirmBinding(flow, { mode: &#x27;link&#x27; | &#x27;create&#x27; | &#x27;cancel&#x27; })</code> → <code>POST /account/flows/{flow}/bind</code>（IDP-007）。</p>
+<h3 class="rp-toc-include" id="47-外壳回调态-authcallbacks1-p0外壳"><a href="#47-外壳回调态-authcallbacks1-p0外壳" class="rp-header-anchor rp-link" aria-label="链接到 4.7 外壳回调态 /auth/callback（S1-P0，外壳）">#</a>4.7 外壳回调态 <code>/auth/callback</code>（S1-P0，外壳）</h3>
+<p><strong>用途</strong>：网关 <code>Identity.Client</code>（框架层 Kun）服务端换码并设 <code>qian.sid</code> 后的 UI 落点；校验 <code>iss</code>（RFC 9207，IETF 2022-03）/ <code>state</code>、读 <code>error</code>、清 URL、回 <code>returnTo</code>。换码模型（服务端 BFF Cookie 会话 vs 外壳 SPA 直接换码）由 YUE-002 / IDP-005 裁定（D5）。</p>
+<p><strong>版式</strong>：全屏居中，不渲染外壳侧栏与顶栏；<code>Spinner</code> + 一行文字；错误时 <code>Result</code>。</p>
+<p><strong>元素清单</strong>：<code>Spinner label</code>「正在完成登录」+ 文本「正在完成登录…」；错误态：<code>Result tone=error</code> 标题「登录未完成」+ <code>AuthErrorNotice</code> + <code>ButtonGroup</code>「重新登录」「返回首页」；技术详情折叠（client_id、iss、state 前 6 位、trace_id）。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>换码中</td><td>回调</td><td>先 <code>history.replaceState</code> 清除 code / state 再渲染</td><td>—</td></tr><tr><td>state 不匹配 / 缺失</td><td>校验</td><td>硬错误，不重试</td><td><code>AUTH_STATE_MISMATCH</code>（外壳本地码）</td></tr><tr><td>iss 不匹配</td><td>RFC 9207</td><td>硬错误</td><td><code>AUTH_ISS_MISMATCH</code>（外壳本地码）</td></tr><tr><td>用户取消</td><td><code>error=access_denied</code></td><td><code>Result tone=warn</code>「您取消了登录」+「重新登录」</td><td>—</td></tr><tr><td>需要交互</td><td><code>interaction_required</code> / <code>login_required</code> / <code>consent_required</code> / <code>account_selection_required</code></td><td>自动以对应 <code>prompt</code> 重发一次（sessionStorage 计数上限 1）</td><td>—</td></tr><tr><td>授权码过期 / 重放</td><td><code>invalid_grant</code></td><td>「登录链接已失效，请重新登录」</td><td>—</td></tr><tr><td>网络失败</td><td>—</td><td><code>AuthErrorNotice</code> +「重试」（同一 code 只重试一次）</td><td>—</td></tr><tr><td>returnTo 非法</td><td>非同源相对路径 / 以 <code>//</code> 开头</td><td>忽略并回首页</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：PKCE <code>code_verifier</code> / <code>state</code> / <code>nonce</code> 由网关或 sessionStorage 持有并用后即删；access token 只在内存；refresh 只在 HttpOnly Cookie；回调路由不加载 MF2 远程；<code>returnTo</code> 白名单。</p>
+<p><strong>无障碍要点</strong>：<code>role=status</code> 进度；错误态标题容器聚焦。</p>
+<p><strong>接触点</strong>：<code>AuthProvider.rp.beginLogin({ returnTo, tenantHint?, prompt? })</code> → <code>GET /auth/login</code>（网关生成 PKCE + state 后 302 <code>/connect/authorize</code>）；<code>completeLogin(url)</code>；<code>TokenProvider.getAccessToken / refreshAccessToken</code>（<code>@yue/sdk</code> <code>PlatformClient</code> 的 <code>tokenProvider</code>，合并并发；<code>onSessionExpired</code> 只触发一次）。</p>
+<h3 class="rp-toc-include" id="48-会话弹窗族s1-p0外壳全局"><a href="#48-会话弹窗族s1-p0外壳全局" class="rp-header-anchor rp-link" aria-label="链接到 4.8 会话弹窗族（S1-P0，外壳全局）">#</a>4.8 会话弹窗族（S1-P0，外壳全局）</h3>
+<p><strong>用途</strong>：登录过期 AlertDialog、会话失效接收、权限变更 Toast、上次登录提示（PRD 13.3.2）、闲置预警（S1-P1）。</p>
+<p><strong>版式</strong>：<code>AlertDialog</code> 居中模态（宽 <code>min(32rem, 100vw − 2rem)</code>，<code>showCloseButton=false</code>，受控 <code>open</code> 在 <code>onOpenChange</code> 中忽略 Esc 与遮罩关闭——这是有意偏离 WAI-ARIA APG Alert Dialog 模式的产品决策，理由：没有可返回的安全状态）；Toast 右下角 <code>ToastViewport</code>。</p>
+<p><strong>元素清单</strong>：<code>AlertDialogTitle</code>「登录已过期」+ <code>AlertDialogDescription</code>「为保护您的数据，请重新登录。当前页面的未保存内容会尽量保留」+ <code>Button primary</code>「重新登录」+ <code>Button outline</code>「重试」+ 折叠技术详情（原因码 + trace_id）；权限变更 <code>useMessage().info</code>「您的权限已更新」5s；上次登录提示：登录成功后 <code>useMessage().info</code>「上次登录：{time}，{ipRegion}，{deviceType}」（数据来自 <code>getSession()</code>，8s）；闲置预警：<code>AlertDialog</code>「您已闲置一段时间，将在 {s} 秒后退出」+「继续使用」「退出登录」（到期前 60s）。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code / 事件</th></tr></thead><tbody><tr><td>登录过期</td><td>刷新队列合并并发 401，refresh 失败一次</td><td>弹过期对话框，只弹一个；打开时焦点在「重新登录」</td><td><code>UNAUTHENTICATED</code>（401）</td></tr><tr><td>重试成功</td><td>已在其他标签页登录</td><td>关闭对话框，队列请求重放</td><td>—</td></tr><tr><td>离线</td><td>网络断开</td><td>不弹过期，显示外壳离线兜底横幅（S1-YUE-002 兜底页范围，非 <code>@yue/core</code> 组件）；恢复后再判定</td><td>—</td></tr><tr><td>强制下线（有实时通道）</td><td><code>logout(reason)</code></td><td>≤ 3s：清内存令牌 → 取消在途请求 → 阻断路由 → 跳 <code>/login</code>（服务端写一次性登出提示 Cookie；降级 <code>?reason=</code> 白名单）</td><td><code>identity.logout.v1</code>（<code>reason</code> 枚举需登记）</td></tr><tr><td>强制下线（无实时通道，v0 主路径）</td><td>下一次请求 401</td><td>刷新失败 → 过期对话框文案改为服务端 <code>message</code></td><td><code>UNAUTHENTICATED</code> + <code>AUTH_SESSION_REVOKED</code> 子码（提案）</td></tr><tr><td>权限变更</td><td><code>identityRevisionChanged</code></td><td>不弹窗、不跳转：静默刷新令牌 + 重载菜单 / 权限快照 + Toast</td><td><code>authz.grant.changed.v1</code> / <code>authz.role.changed.v1</code></td></tr><tr><td>多标签页</td><td>任一标签登出</td><td><code>BroadcastChannel</code> 同步到 <code>/login</code></td><td>—</td></tr></tbody></table></div>
+<p><strong>文案</strong>：「登录已过期」/ Your session has expired；「重新登录」/ Sign in again；「您的权限已更新」/ Your permissions were updated；reason 文案见 §4.1 会话失效回落行。</p>
+<p><strong>安全要点</strong>：对话框内不收集密码；<code>returnTo</code> 只是同源相对路由；令牌只在内存，弹出即清空；<code>reason</code> 来自服务端事件载荷或一次性 Cookie，不信任 URL；实时握手用 30s 一次性票据（7.13.2），URL 不带 access_token；无实时通道时（备忘录 §7.2 砍 SCH-003、7.13.2 改「明确不支持」的建议拍板后）「≤ 3s」验收降为「下一请求被拒 → 刷新失败 → 对话框」。</p>
+<p><strong>无障碍要点</strong>：<code>role=alertdialog</code>，<code>aria-labelledby</code> / <code>aria-describedby</code> 关联；Esc 被禁用时描述中说明「需要重新登录才能继续」；Toast <code>polite</code>；闲置预警至少提前 20s 可延长（WCAG 2.2.1）。</p>
+<p><strong>接触点</strong>：<code>AuthProvider.rp.subscribe(&#x27;logout&#x27; | &#x27;identityRevisionChanged&#x27;)</code>；<code>PlatformClient.onSessionExpired</code>；<code>rp.getSession()</code>（<code>tenant_id</code> / <code>membership_id</code> / <code>amr</code> / <code>acr</code> / <code>exp</code> / <code>lastLogin</code> / <code>idleTimeout</code>，后两项需会话信息端点，待登记）。</p>
+<h3 class="rp-toc-include" id="49-租户切换器与平台代管横幅s1-p0外壳"><a href="#49-租户切换器与平台代管横幅s1-p0外壳" class="rp-header-anchor rp-link" aria-label="链接到 4.9 租户切换器与平台代管横幅（S1-P0，外壳）">#</a>4.9 租户切换器与平台代管横幅（S1-P0，外壳）</h3>
+<p><strong>用途</strong>：运行中切换租户 = 服务端重签（<code>membership_id</code> 变化、<code>identity_revision</code> 重取）+ 清缓存 + 重拉菜单与权限（权限不进令牌）；平台代管模式下顶栏常驻横幅（数据来自 <code>qian.tenancy</code> 代管上下文，TEN-010，S1-B）。</p>
+<p><strong>版式</strong>：用户菜单（<code>DropdownMenu</code> 别名 = <code>Menu</code>）项「切换租户（当前：{name}）」→ <code>Dialog</code>（宽 28rem）复用 §4.3 列表部件；当前项 <code>Badge tone=neutral</code>「当前」且不可选；切换中全屏遮罩 + <code>Spinner</code>；代管横幅：顶栏 <code>Alert tone=warn role=status</code>「您正以平台运营身份代管租户 {name}；操作将以您的真实身份审计」+ <code>Button ghost sm</code>「退出代管」。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>加载成员列表</td><td>打开 Dialog</td><td><code>Skeleton</code></td><td>—</td></tr><tr><td>有未保存更改</td><td>表单脏</td><td><code>useConfirm</code>「有未保存的更改，仍要切换？」+ <code>destructive</code>「放弃并切换」</td><td>—</td></tr><tr><td>切换中</td><td>确认</td><td>遮罩 <code>aria-busy</code>；取消在途请求；<code>sdk.error.contextChanged</code> 拦截旧请求</td><td>—</td></tr><tr><td>目标更严</td><td>要求 MFA</td><td>跳 <code>/login/mfa</code>，<code>returnTo=/</code></td><td>—</td></tr><tr><td>目标不可用</td><td>冻结 / 宽限 / 只读</td><td>项禁用 + Badge + 原因</td><td><code>AUTH_TENANT_NOT_ACTIVE</code></td></tr><tr><td>失败</td><td>服务端</td><td>回滚原租户上下文 + <code>useMessage().error</code>「切换失败，已保留当前租户」</td><td>任意</td></tr><tr><td>成功</td><td>重签完成</td><td>清 TanStack Query 缓存 → 重拉菜单与权限 → 跳目标租户首页 → Toast「已切换到 {name}」</td><td>—</td></tr><tr><td>代管态</td><td><code>getContext().managed</code></td><td>横幅常驻；切换器列表只显示代管来源可达的租户；审计标 <code>actor</code> 为真实运营身份</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：运行中切换时 5 分钟选择令牌已过期，需 IDP-003 提供「基于现有 SSO 会话的切换端点」（§6 新增验收），否则退化为 <code>prompt=select_account</code> 顶层往返；前端不改 tenant 头冒充；旧令牌从内存清除。</p>
+<p><strong>无障碍要点</strong>：<code>DropdownMenuItem</code> 无 <code>menuitemradio</code>（<code>Menu</code> 无 RadioItem），当前项以可见文本「当前」+ <code>aria-current</code> 标识；Dialog 焦点管理；遮罩 <code>aria-busy</code>。</p>
+<p><strong>接触点</strong>：<code>rp.listMemberships()</code> → <code>GET /api/identity/me/memberships</code>；<code>rp.switchTenant({ membershipId })</code> → <code>POST /auth/session/switch-tenant</code>（网关转 <code>qian.identity</code> 重签）；代管上下文来自 <code>qian.tenancy</code>（TEN-010）。</p>
+<h3 class="rp-toc-include" id="410-登出确认-connectlogouts1-p0服务端渲染"><a href="#410-登出确认-connectlogouts1-p0服务端渲染" class="rp-header-anchor rp-link" aria-label="链接到 4.10 登出确认 /connect/logout（S1-P0，服务端渲染）">#</a>4.10 登出确认 <code>/connect/logout</code>（S1-P0，服务端渲染）</h3>
+<p><strong>用途</strong>：RP 发起登出的确认页；GET 只展示表单，POST 带 antiforgery（<code>Qian.Identity.Server</code> 既有）；后通道登出对用户静默。</p>
+<p><strong>版式</strong>：服务端渲染的极简 HTML（不加载 React），引用 <code>@yue/tokens</code> 生成的 CSS 变量 + 一份 <code>auth.css</code>，版式与 <code>AuthLayout</code> 一致；需为此页单独加截图基线（yue 视觉门禁对 16px 图标有盲区）。</p>
+<p><strong>元素清单</strong>：<code>h1</code>「退出登录？」；说明「将结束您在 {client} 的登录；已连接的其他应用会同步退出」（<code>id_token_hint</code> 解析失败则省略 client）；<code>&lt;form method=post&gt;</code> + 隐藏 antiforgery 字段；按钮「取消」「退出」；完成态「已退出登录」+「重新登录」；携带已注册 <code>post_logout_redirect_uri</code> 时自动跳转前有 <code>role=status</code> 提示。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>默认 / 提交中</td><td>GET / POST</td><td>主按钮默认焦点；提交中禁用</td><td>—</td></tr><tr><td><code>id_token_hint</code> 无效</td><td>校验</td><td>仍显示确认，不展示 client、不回跳（OIDC RP-Initiated Logout 1.0，OpenID Foundation 2022-09-12）</td><td>—</td></tr><tr><td>回跳不在白名单</td><td>校验</td><td>忽略回跳，走完成态</td><td>—</td></tr><tr><td>antiforgery 失败</td><td>POST</td><td>重新渲染表单 +「页面已过期，请重试」</td><td><code>INPUT_INVALID</code></td></tr><tr><td>无会话</td><td>直访</td><td>直接完成态</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：GET 只展示、POST 才登出；<code>post_logout_redirect_uri</code> 严格白名单；<code>no-store</code>；外壳侧先 <code>/auth/logout</code>（网关清 <code>qian.sid</code>）再 302 本页；其他标签页经 <code>BroadcastChannel</code> 同步；「同时退出所有设备」勾选项 S1 不做（revoke-all 归 IDP-004 管理面与个人中心）。</p>
+<p><strong>无障碍要点</strong>：无 JS 完整可用；<code>h1</code> 唯一；按钮有可见文字。</p>
+<p><strong>接触点</strong>：<code>rp.logout()</code> → <code>/auth/logout</code> → <code>GET /connect/logout?id_token_hint&amp;post_logout_redirect_uri</code> → POST。</p>
+<h3 class="rp-toc-include" id="411-短信验证码登录login-验证码-tabs1-p1--s1-b"><a href="#411-短信验证码登录login-验证码-tabs1-p1--s1-b" class="rp-header-anchor rp-link" aria-label="链接到 4.11 短信验证码登录（/login 验证码 Tab，S1-P1 · S1-B）">#</a>4.11 短信验证码登录（<code>/login</code> 验证码 Tab，S1-P1 · S1-B）</h3>
+<p><strong>用途</strong>：短信 OTP 作一等登录因子（D5.3）；邮箱渠道待 Q20。</p>
+<p><strong>元素与状态</strong>（增量于 §4.1）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>未发码</td><td>默认</td><td><code>PinInput disabled</code>，主按钮 <code>disabled</code>；标识格式本地校验后才允许发码</td><td>—</td></tr><tr><td>发送中 / 已发送</td><td>POST otp</td><td>统一响应；<code>FieldDescription aria-live=polite</code>「如果该手机号已注册，验证码会在 1 分钟内送达」；焦点移到 PinInput；重发按钮按服务端 <code>resend_after</code> 倒计时（默认 60s）</td><td>—</td></tr><tr><td>重发过快 / 预算用尽</td><td>429</td><td>按钮保持倒计时；<code>Alert tone=warn</code>「验证码发送过于频繁，请稍后再试」；对未注册号同样返回</td><td><code>RATE_LIMITED</code></td></tr><tr><td>需图形验证码</td><td>策略</td><td><code>CaptchaField</code> 插在发码按钮之前</td><td><code>AUTH_CAPTCHA_REQUIRED</code></td></tr><tr><td>验证码错误 / 过期</td><td>校验</td><td><code>FieldError</code>「验证码不正确或已过期」（不区分）；清空并聚焦第一格</td><td><code>AUTH_OTP_INVALID</code>（422）</td></tr><tr><td>尝试超限</td><td>5 次</td><td><code>FieldError</code>「尝试次数过多，请重新获取验证码」；PinInput <code>disabled</code></td><td><code>AUTH_OTP_ATTEMPTS_EXCEEDED</code>（422）</td></tr><tr><td>成功</td><td>校验</td><td>按 <code>next</code>（<code>amr=sms</code> 时策略可能仍要求 TOTP → <code>/login/mfa</code>）</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：OTP 服务端哈希存储、<code>purpose=login</code> 隔离、常量时间比较、「Verify 成功 → 签发 → Consume」顺序、冷却 <code>SET NX 60s</code>（备忘录 §12.2）；发码对已知 / 未知标识同响应且不发码；不设「该账号无验证码渠道」之类的区分响应；按标识与 IP 限流。</p>
+<p><strong>接触点</strong>：<code>sendOtp(flow, { channel: &#x27;sms&#x27; | &#x27;email&#x27;, identifier, purpose: &#x27;login&#x27;, captchaTicket? })</code>；<code>signIn(flow, { factor: &#x27;sms_otp&#x27; | &#x27;email_otp&#x27;, identifier, secret })</code>。</p>
+<h3 class="rp-toc-include" id="412-找回密码-loginforgotflow--loginresets1-p1--s1-b"><a href="#412-找回密码-loginforgotflow--loginresets1-p1--s1-b" class="rp-header-anchor rp-link" aria-label="链接到 4.12 找回密码 /login/forgot?flow= → /login/reset（S1-P1 · S1-B）">#</a>4.12 找回密码 <code>/login/forgot?flow=</code> → <code>/login/reset</code>（S1-P1 · S1-B）</h3>
+<p><strong>用途</strong>：短信 OTP 验证身份 → 新密码；成功后吊销全部会话；防枚举同响应。</p>
+<p><strong>元素清单</strong>：<code>h1</code>「找回密码」+ <code>Progress</code>（<code>label</code>「第 {i} 步，共 3 步」）；步骤 1：<code>Field</code> + <code>Input</code> 手机号 + <code>CaptchaField</code> 槽位 + <code>Button primary</code>「发送验证码」；步骤 2：<code>PinInput length=6</code> +「重新发送（{n}s）」+ <code>Button primary</code>「验证」；步骤 3：<code>InputPassword</code> 新密码 / 确认 + <code>PasswordPolicyChecklist</code> + <code>Button primary</code>「重置密码」；完成：<code>Result tone=ok</code>「密码已重置，其他设备已退出登录」+「去登录」；<code>Button ghost sm</code>「返回登录」。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>步骤 1 发送</td><td>POST</td><td>统一响应「如果该账号存在，验证码已发送；若无法收到，请联系租户管理员」，直接进入步骤 2（无渠道 / 仅企业 IdP 账号同响应）</td><td>—</td></tr><tr><td>OTP 错误 / 超限 / 限流</td><td>同 §4.11</td><td>同 §4.11</td><td>同 §4.11</td></tr><tr><td>策略违规 / 复用</td><td>同 §4.4</td><td>同 §4.4</td><td>同 §4.4</td></tr><tr><td>恢复票据过期</td><td>建议 10 分钟</td><td><code>Result</code>「操作已超时」+「重新开始」</td><td><code>AUTH_FLOW_EXPIRED</code></td></tr><tr><td>成功</td><td>重置</td><td><code>Result</code> → <code>/login</code>（账号不预填）</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：恢复票据服务端持有并与 Cookie 绑定、一次性、短时；<code>purpose=reset</code> 的 OTP 与登录 OTP 隔离；不发邮件链接；不提供安全问题；用户名无手机 / 邮箱的账号只能管理员重置（TEN-010 端口）；重置成功触发全部会话失效与审计。</p>
+<p><strong>接触点</strong>：<code>recover.send / verify / reset</code> → <code>POST /account/recover/{send|verify|reset}</code>（IDP-006）。</p>
+<h3 class="rp-toc-include" id="413-totp-绑定-loginmfaenrollflows1-p0--s1-b"><a href="#413-totp-绑定-loginmfaenrollflows1-p0--s1-b" class="rp-header-anchor rp-link" aria-label="链接到 4.13 TOTP 绑定 /login/mfa/enroll?flow=（S1-P0 · S1-B）">#</a>4.13 TOTP 绑定 <code>/login/mfa/enroll?flow=</code>（S1-P0 · S1-B）</h3>
+<p><strong>用途</strong>：租户策略要求两步验证且无因子时的首次登录绑定；不可跳过；7.4.1 E2E「TOTP 绑定与校验」依赖本页。</p>
+<p><strong>元素清单</strong>：<code>Alert tone=info</code>「您的租户要求启用两步验证」；<code>CardTitle</code>「启用身份验证器」+ <code>CardDescription</code>「用身份验证器应用扫描二维码」；<code>img</code>（服务端返回 SVG data URI，<code>alt</code>「TOTP 绑定二维码」，不新增组件）；<code>Button ghost sm</code>「无法扫码？」→ 手动密钥（<code>--yue-p-font-mono</code> 4 位分组 + <code>Button ghost sm</code>「复制密钥」，图标需新增）；<code>Field</code> + <code>PinInput length=6</code>「输入应用显示的 6 位动态码」；<code>Button primary</code>「启用并继续」；<code>Button ghost sm</code>「退出登录」。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>加载密钥</td><td>POST enroll</td><td><code>Skeleton</code></td><td>—</td></tr><tr><td>校验失败</td><td>首码错</td><td><code>FieldError</code>「动态码不正确，请检查设备时间」</td><td><code>AUTH_TOTP_INVALID</code></td></tr><tr><td>密钥过期</td><td>超时</td><td><code>Alert</code> +「重新生成」</td><td><code>AUTH_FLOW_EXPIRED</code></td></tr><tr><td>成功</td><td>确认</td><td><code>useMessage().success</code>「两步验证已启用」→ <code>next</code></td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：密钥只在本页会话内，不写日志、不进 URL；成功校验前不激活；手动密钥默认折叠。<strong>无障碍</strong>：二维码 <code>alt</code> + 文本密钥替代；复制后 <code>aria-live</code>「已复制」。<strong>接触点</strong>：<code>beginTotpEnrollment(flow)</code> / <code>confirmTotpEnrollment(flow, { code })</code>（IDP-006）。</p>
+<h3 class="rp-toc-include" id="414-企业微信工作台免登中转-loginwecomflows1-p0--s1-b"><a href="#414-企业微信工作台免登中转-loginwecomflows1-p0--s1-b" class="rp-header-anchor rp-link" aria-label="链接到 4.14 企业微信工作台免登中转 /login/wecom?flow=（S1-P0 · S1-B）">#</a>4.14 企业微信工作台免登中转 <code>/login/wecom?flow=</code>（S1-P0 · S1-B）</h3>
+<p><strong>用途</strong>：UA 识别为企微工作台且连接器已在当前租户 scope 挂载 → <code>ExchangeImplicitAsync(code)</code>；未绑定 → §4.6；多租户先反查 openid 绑定的租户 → §4.3（IDP-008）。PC 扫码走 §4.5 连接器流程（S1 为整页跳转，内嵌二维码面板 S2）。</p>
+<p><strong>元素与状态</strong>：<code>Spinner</code> +「正在通过企业微信登录…」（<code>role=status</code>）+ <code>Button ghost sm</code>「改用其他方式登录」；失败 <code>Result</code>：连接器未挂载 → <code>NOT_FOUND</code>「该登录方式不可用」；code 失效 →「登录已过期，请重新打开应用」；成功按 <code>next</code>。企微 WebView 下按 &lt; sm 单列渲染。</p>
+<p><strong>安全要点</strong>：code 换 userId 全在服务端；凭据来自 secretRef；<code>policy.egress</code> 只含企微域名；UA 识别只是触发条件，不作信任依据；企微 code 只在请求体，exchange 后清 URL。<strong>接触点</strong>：<code>exchangeImplicit(flow, &#x27;wecom&#x27;, code)</code>。</p>
+<h3 class="rp-toc-include" id="415-设备码授权-device--deviceconfirmflow--devicedone条件q22--idp-012"><a href="#415-设备码授权-device--deviceconfirmflow--devicedone条件q22--idp-012" class="rp-header-anchor rp-link" aria-label="链接到 4.15 设备码授权 /device → /device/confirm?flow= → /device/done（条件：Q22 / IDP-012）">#</a>4.15 设备码授权 <code>/device</code> → <code>/device/confirm?flow=</code> → <code>/device/done</code>（条件：Q22 / IDP-012）</h3>
+<p><strong>用途</strong>：<code>qian login</code> 设备码路径（RFC 8628，IETF 2019-08）；输入 user_code → 登录 → 同意 → 回终端；loopback PKCE（RFC 8252，IETF 2017-10）回跳后由 CLI 渲染本地完成页。前提：<code>IdentityServerHosting</code> 当前只启用 AuthorizationCode / RefreshToken / ClientCredentials 三种 flow，设备授权端点与显式同意需随 IDP-012 开启。</p>
+<p><strong>元素清单</strong>：<code>h1</code>「授权命令行或 Agent」+ 说明「在终端运行 qian login 后，输入终端显示的代码」；<code>Field</code>「设备代码」：两组 <code>PinInput length=4</code>（8 槽 <code>size-10</code> + 间距在 375px 溢出）或单个 <code>Input</code>（mono、<code>autocapitalize=characters</code>、<code>autocomplete=off</code>、占位「WDJB-MJHT」）+ <code>FieldDescription</code>「不区分大小写，可省略连字符」；<code>Alert tone=warn role=note</code>（常驻）「只输入您自己终端上显示的代码；他人发给您的代码不要输入」；<code>Button primary</code>「继续」；确认页（<code>/device/confirm</code>，凭服务端 flow 渲染，user_code 不进 URL）：客户端卡（<code>Avatar</code> + 名称 + <code>Badge</code>「命令行」/「Agent」+ 发布者 + 信任等级）+「以 {displayName}（{tenant}）的身份」+ 多 Membership 时 <code>Select</code> + 请求发起时间与 IP 归属 + 权限 / 资源列表（同 §4.16）+ <code>Button primary</code>「授权」+ <code>Button outline</code>「拒绝」；完成：<code>Result tone=ok</code>「已授权，请回到终端继续」/ <code>Result tone=neutral</code>「已拒绝，终端不会获得访问权限」；CLI 本地完成页：静态 HTML ≤ 4KB、内联 <code>@yue/tokens</code> 语义变量两态，「登录完成，可以回到终端」/「登录失败」/「您拒绝了授权」。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>预填</td><td><code>?user_code=</code>（<code>verification_uri_complete</code>，RFC 8628 §3.2）</td><td>预填但不自动提交；警示升为 <code>tone=warn</code> 并要求 <code>Checkbox</code>「这是我自己终端上的代码」</td><td>—</td></tr><tr><td>代码不正确</td><td>校验</td><td><code>FieldError</code>「代码不正确，请核对终端上的代码」</td><td><code>AUTH_DEVICE_CODE_INVALID</code>（422）</td></tr><tr><td>代码过期</td><td>校验</td><td><code>Alert tone=warn</code>「代码已过期，请在终端重新运行 qian login」</td><td><code>AUTH_DEVICE_CODE_EXPIRED</code>（422）</td></tr><tr><td>已使用</td><td>校验</td><td><code>Result</code>「该代码已完成授权」</td><td><code>AUTH_DEVICE_CODE_CONSUMED</code>（422）</td></tr><tr><td>限流</td><td>猜测</td><td>按钮 <code>disabled</code> + 倒计时</td><td><code>RATE_LIMITED</code></td></tr><tr><td>未登录</td><td>会话</td><td>先 §4.1（flow 带 device 上下文）再回确认页</td><td>—</td></tr><tr><td>acr 不足</td><td>策略</td><td>跳 <code>/login/mfa</code> 再回</td><td>—</td></tr><tr><td>授权 / 拒绝</td><td>决策</td><td><code>/device/done</code>；CLI 轮询 <code>/connect/token(grant_type=device_code)</code></td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：user_code 熵 ≥ 20 bit、按 IP + 账号限流（RFC 8628 §5.1）；user_code 只经 POST 与服务端会话绑定，不记日志、不进确认页 URL 或 Referer；客户端信息只在代码有效后展示；对抗远程钓鱼（RFC 8628 §5.4）：常驻警示 + 确认页显示账号 / 成员身份 / 发起时间 / IP 归属；批准绑定当前会话与所选 Membership；浏览器端永不显示或接收令牌；loopback 只接受 <code>127.0.0.1</code> / <code>[::1]</code> 注册端口、单次请求后关闭；短时 Bearer 只打印到 stdout。</p>
+<p><strong>接触点</strong>：<code>verifyDeviceCode({ userCode })</code> → <code>POST /account/device</code>；<code>decideDevice(flow, { membershipId, decision })</code>；CLI：<code>POST /connect/device</code>、<code>POST /connect/token</code>（OpenIddict 内建，IDP-012 开启）。</p>
+<h3 class="rp-toc-include" id="416-授权同意-consentflow条件q5--q22--q25--idp-012"><a href="#416-授权同意-consentflow条件q5--q22--q25--idp-012" class="rp-header-anchor rp-link" aria-label="链接到 4.16 授权同意 /consent?flow=（条件：Q5 / Q22 / Q25 / IDP-012）">#</a>4.16 授权同意 <code>/consent?flow=</code>（条件：Q5 / Q22 / Q25 / IDP-012）</h3>
+<p><strong>用途</strong>：第三方 / CLI / Agent 客户端授权；展示 client、scope、resource、委托与有效期；公开客户端每次同意（RFC 8252 §8.6）；官方受信 implicit-consent 客户端不出现本页（<code>Qian.Identity.Server</code> README：S1 只接受此类客户端，显式同意需 IDP-012 放开 <code>ConsentType</code> 校验）。</p>
+<p><strong>版式</strong>：同外框，内容列 32rem；客户端卡 → 身份行 → 权限分组 → 资源 → 委托 → 有效期 → 按钮行（拒绝在前）。</p>
+<p><strong>元素清单</strong>：<code>h1</code>「{client} 请求访问您的账号」；<code>Card</code>：<code>Avatar</code>（注册表图标）+ 名称 + <code>Badge</code> 类型（第三方应用 / 命令行工具 / Agent 客户端 / 平台插件）+ <code>Badge</code> 信任等级 + <code>CardDescription</code>「由 {owner} 注册」（Agent：「归属人 {ownerPerson}」）+ 回跳地址主机名（可见，反钓鱼）；身份行：<code>Avatar</code> + displayName + <code>Tag</code>「{tenantName}」+ <code>Button ghost sm</code>「切换账号」；权限列表 <code>ul</code>：每项 <code>Icon check</code> + 目录标题 + 描述 + <code>Badge</code> 副作用等级（只读 / 写入 / 外部 / 破坏性）；含破坏性时上方 <code>Alert tone=warn</code>；资源 <code>Descriptions</code>「将访问」= RFC 8707（IETF 2020-02）resource 标签 + mono aud；委托段（<code>client.type=agent</code>）<code>Alert tone=info</code>「该客户端将以您的名义执行操作；其有效权限 = 您的权限 ∩ 以上范围；标记为『仅限人工』的操作始终被拒绝；所有操作记录为 actor=agent、on_behalf_of=您」；有效期「授权有效期由策略下发：{expiresAt}；撤销途径：联系租户管理员（S2 起可在『安全 → 已授权的应用』自助撤销）」；设备码上下文 <code>Alert tone=warn</code>「此请求来自终端代码 {user_code}，请确认与终端显示一致」；<code>Checkbox</code>（含破坏性 scope 时必选）「我了解上述操作可能不可逆」；<code>Button secondary</code>「拒绝」（DOM 在前、默认焦点）+ <code>Button primary</code>「允许」（Checkbox 未勾时 <code>disabled</code>）；两按钮都正常响应 Enter / Space。</p>
+<p><strong>状态表</strong>：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>状态</th><th>触发</th><th>UI 表现</th><th>ErrorDetail.code</th></tr></thead><tbody><tr><td>加载 / 默认 / 提交中</td><td>GET flow</td><td><code>Skeleton</code>；默认焦点「拒绝」</td><td>—</td></tr><tr><td>请求过期</td><td>5 分钟</td><td><code>Result</code>「授权请求已过期，请回到应用重新发起」</td><td><code>AUTH_CONSENT_EXPIRED</code>（422）</td></tr><tr><td>未审核客户端</td><td>信任等级 community</td><td><code>Alert tone=warn</code>「该客户端未经平台审核」</td><td>—</td></tr><tr><td>scope / resource 超白名单</td><td>服务端</td><td><code>/connect/error</code>（§4.17）</td><td>协议错误</td></tr><tr><td>acr 不足</td><td>策略</td><td>跳 <code>/login/mfa</code> 再回</td><td>—</td></tr><tr><td>允许</td><td>决策</td><td>签授权码回 RP / <code>/device/done</code></td><td>—</td></tr><tr><td>拒绝 / 超时 / 关闭</td><td>决策</td><td><code>error=access_denied</code> 回 RP；视为未同意</td><td>—</td></tr></tbody></table></div>
+<p><strong>安全要点</strong>：client 名称 / 类型 / 归属来自注册表，scope 文案来自服务端目录，不渲染 RP 自报；不预勾选、不自动同意、超时默认拒绝；S1 不做 scope 裁剪（必需 / 可选拆分 S2，§7）；决策 POST 带 antiforgery，不进 URL；同意记录进审计（建议事件 <code>identity.consent.v1</code>，需登记）；<code>act</code> / <code>on_behalf_of</code> 方向按 <code>contracts/v0</code> 裁决后回填委托段文案；<code>frame-ancestors &#x27;none&#x27;</code>。</p>
+<p><strong>接触点</strong>：<code>getFlow</code> 返回 <code>consent { client, scopes[], resources[], delegation, device?, expiresAt }</code>；<code>decideConsent(flow, { decision: &#x27;allow&#x27; | &#x27;deny&#x27;, membershipId? })</code> → <code>POST /account/consent/{flow}</code>。</p>
+<h3 class="rp-toc-include" id="417-授权请求无效-connecterrors1-p1"><a href="#417-授权请求无效-connecterrors1-p1" class="rp-header-anchor rp-link" aria-label="链接到 4.17 授权请求无效 /connect/error（S1-P1）">#</a>4.17 授权请求无效 <code>/connect/error</code>（S1-P1）</h3>
+<p><strong>用途</strong>：<code>invalid_client</code> / <code>redirect_uri</code> 不匹配 / <code>invalid_target</code> / <code>invalid_scope</code> 等不得重定向的协议错误（OIDC Core 1.0 §3.1.2.6）；当前仓库无此路由（Authorize 的 Reject 走 OpenIddict pass-through），为新增项。</p>
+<p><strong>元素与状态</strong>：<code>Result tone=error</code>「无法处理此授权请求」+ 人话（「应用未注册或已停用」「应用的回跳地址未注册」「应用请求了未授权的资源」）+ 协议错误码（mono）+ 转义截断的 <code>error_description</code> + 技术详情折叠（client_id、redirect_uri 主机、scope、resource、trace_id）+ 文本「您可以关闭此页面，并把以上信息提供给应用开发者」。永不按未验证的 <code>redirect_uri</code> 跳转；可回跳的错误（<code>login_required</code> 等）不进本页。</p>
+<h2 class="rp-toc-include" id="5-视觉规范"><a href="#5-视觉规范" class="rp-header-anchor rp-link" aria-label="链接到 5 视觉规范">#</a>5 视觉规范</h2>
+<p>只引用 <code>@yue/tokens</code>（<code>packages/yue/tokens/src/registry.json</code>）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>项</th><th>令牌 / 取值</th><th>说明</th></tr></thead><tbody><tr><td>品牌色</td><td><code>--yue-primary</code> / <code>--yue-primary-foreground</code>；<code>brands.default → blue</code>（oklch 色相 260，chroma .18）；light 用 brand-600、dark 用 brand-400</td><td>主按钮、焦点环 <code>--yue-ring</code>（3px）、<code>Badge tone=info</code>；连接器按钮一律 <code>outline</code>，不用各家品牌色填充</td></tr><tr><td>中性色</td><td><code>--yue-background</code> / <code>--yue-foreground</code> / <code>--yue-card</code> / <code>--yue-border</code> / <code>--yue-muted</code> / <code>--yue-muted-foreground</code> / <code>--yue-sidebar</code></td><td>neutral 调色板色相 260、chroma 0</td></tr><tr><td>状态色</td><td><code>--yue-error</code> / <code>--yue-error-bg</code>、<code>--yue-warn</code> / <code>-bg</code>、<code>--yue-info</code> / <code>-bg</code>、<code>--yue-ok</code> / <code>-bg</code>；<code>Tone = ok | warn | error | info | neutral</code></td><td><code>Alert</code> / <code>Badge</code> / <code>Tag</code> / <code>Result</code> 的 <code>tone</code> 已映射；<code>Alert</code> 内文字只用 tone 色不用 muted</td></tr><tr><td>圆角</td><td><code>--yue-radius</code> = <code>--yue-p-radius-base</code> = 0.625rem；按钮 <code>--yue-button-radius</code> 与输入 <code>--yue-input-radius</code> = <code>calc(var(--yue-radius) − 2px)</code>；<code>Card</code> 用 <code>rounded-xl</code>（主题映射 <code>calc(--radius + 4px)</code>）</td><td>任务文本中的「.5rem」是 <code>--yue-p-radius-md</code>，不是组件默认圆角</td></tr><tr><td>字体</td><td><code>--yue-p-font-sans</code>（系统栈含 PingFang SC / Microsoft YaHei / Noto Sans CJK SC）；<code>--yue-p-font-mono</code>（租户号、user_code、密钥、trace_id）</td><td>h1 <code>--yue-p-font-size-xl</code> font-semibold；正文 <code>--yue-p-font-size-sm</code>；行高 <code>--yue-p-line-height-normal</code></td></tr><tr><td>间距与高度</td><td>字段间 <code>--yue-p-space-4</code>，分区 <code>--yue-p-space-6</code>，卡片内边距 <code>--yue-p-space-6</code>；控件高度 <code>--yue-button-height</code>（2.25rem）；<code>PinInput</code> 槽 <code>size-10</code></td><td>不覆盖为 44px</td></tr><tr><td>阴影 / 层级</td><td><code>--yue-p-shadow-sm</code>；弹窗 <code>--yue-p-z-modal</code></td><td>—</td></tr><tr><td>明暗</td><td><code>html.dark</code> + <code>color-scheme</code>，首帧防闪烁脚本（需 CSP nonce / hash）；偏好经 <code>ThemeController</code>（localStorage <code>yue-theme</code>，light / dark / system 三态）；<code>data-theme</code> / <code>.dark</code> 是脚本输出不是覆盖入口</td><td>登录页宿主与外壳不同源，偏好不共享：登录域默认跟随系统 + 自带切换（D8）</td></tr><tr><td>品牌区与租户品牌预留</td><td>S1 平台级一套，来自 <code>__APP_CONF__.brand</code>；S3 租户品牌经 <code>data-brand</code>（registry <code>brands: default / teal</code>）由服务端按租户下发；只保留注入点</td><td>不做营销区、插画、公告位</td></tr><tr><td>动效</td><td>只用 <code>--yue-p-duration-normal</code> + <code>--yue-p-ease-standard</code> 的透明度 / 高度过渡（标识态 ↔ 验证码态）；<code>motion-reduce</code> 全部关闭</td><td><code>Button loading</code> 的 spinner 自带 <code>motion-reduce:animate-none</code></td></tr><tr><td>响应式断点</td><td><code>--yue-p-breakpoint-sm</code> 40rem / <code>md</code> 48rem / <code>lg</code> 64rem / <code>xl</code> 80rem</td><td>&lt; sm：单列、无卡片边框、16px 侧边距、按钮全宽、连接器纵向堆叠、<code>Descriptions</code> 改纵向、mono 长串 <code>break-all</code>；md–lg：单卡居中；≥ lg：分栏 + 品牌栏；≥ xl 只增留白</td></tr><tr><td>门禁</td><td>认证页族补 375×667 与 1440×900 的 axe + 截图基线（现有 Playwright 只跑 Desktop Chrome）</td><td>登出页（服务端 HTML）单独加基线</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="6-验收映射"><a href="#6-验收映射" class="rp-header-anchor rp-link" aria-label="链接到 6 验收映射">#</a>6 验收映射</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>本规格页面</th><th>对应既有验收条目</th></tr></thead><tbody><tr><td>§4.1 登录页、§4.3 租户选择、§4.8 过期弹窗</td><td>S1-YUE-006 验收 1（靶场经 AuthProvider + mock：账号密码登录、SSO 跳转与回调失败态、多租户二次选择、401 刷新失败弹过期、令牌不进 URL）；验收 3（a11y critical = 0；兜底页场景示例）</td></tr><tr><td>§4.1 / §4.5 / §4.7 / §4.9</td><td>S1-YUE-002 验收 1（真实 OIDC code + PKCE 登录 → 多租户选择 → 切换租户 → 令牌重签 → 菜单与权限刷新；刷新队列合并；过期对话框）；验收 3（localStorage 无令牌明文；URL / iframe 无令牌）</td></tr><tr><td>§4.1 / §4.3 / §4.4</td><td>S1-IDP-003 验收 1（A / B 两 Membership 选择与切换重签）、验收 2（阈值锁定；初始密码强制改密不可跳过）、R95（pending / grace / suspended 拒绝新登录）</td></tr><tr><td>§4.8</td><td>S1-IDP-004 验收 1（改密 ≤ 5s 失效；强制下线后 refresh 被拒）、验收 2（并发上限、单端）、验收 3（<code>identity_revision</code> 递增旧令牌被拒）、R95（租户到期 / 冻结 ≤ 60s 失效）</td></tr><tr><td>§4.2 / §4.11 / §4.12 / §4.13</td><td>S1-IDP-006 验收 1（TOTP 绑定与校验、短信 OTP 登录 staging 走通）、验收 2（锁定通知经 7.12）、验收 3（租户级登录策略下次登录生效）</td></tr><tr><td>§4.5 / §4.6</td><td>S1-IDP-007 验收 1（通用 OIDC 首次登录进入确认绑定，同租户重复绑定被拒）、TCK（state 篡改拒绝、回调幂等）</td></tr><tr><td>§4.1 连接器区 / §4.14</td><td>S1-IDP-008 验收 1（扫码与工作台免登；同一企微账号两租户不同 Membership）、验收 2（A 出现企微入口、B 不出现且回调路由与不存在同错）</td></tr><tr><td>§4.8 权限变更</td><td>S1-AZ-004 验收 2（移除角色后 <code>identity_revision</code> 递增，旧令牌被拒）</td></tr></tbody></table></div>
+<p>需要新增到任务验收的条目（只列，不改任务文件）：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>任务</th><th>新增条目</th></tr></thead><tbody><tr><td>S1-IDP-003</td><td>登记 <code>GET /account/login-options</code>、<code>/account/flows/*</code>（signin / select-tenant / password / bind / complete）、<code>/account/antiforgery</code> 接口形状与 flow Cookie 绑定；<code>AUTH_*</code> 错误码（§4 状态表）登记进 <code>contracts/v0/error-codes.json</code>（owner、kind、status、双语文案）；凭据校验前一律 <code>AUTH_CREDENTIALS_INVALID</code>，锁定 / 停用 / 租户状态 / 仅企业 IdP 只在凭据正确后返回；<code>RATE_LIMITED</code> 以（IP，标识哈希）为键并对未知标识同样返回且带 <code>Retry-After</code>；基于现有 SSO 会话的切换租户端点；改密时「吊销除当前 sid 外全部会话」语义；<code>/login*</code> 与 <code>/connect*</code> 同一组安全头</td></tr><tr><td>S1-IDP-004</td><td><code>identity.logout.v1</code> 的 <code>reason</code> 登记为枚举（password_changed / disabled / locked / tenant_suspended / tenant_expired / revoked_by_admin / concurrent_limit / connector_disabled / unbound）；服务端 302 回登录页时写一次性登出提示 Cookie；会话信息端点含 <code>lastLogin</code>（时间 / IP 归属 / 端类型）与 <code>idleTimeout</code></td></tr><tr><td>S1-IDP-006</td><td>发码对未知标识同响应且不发码、每 IP 与全局预算、尝试上限（send-code 四条防线）；<code>AUTH_OTP_INVALID</code> 不区分错误与过期；找回密码对无渠道 / 仅企业 IdP 账号同响应；TOTP 绑定页二维码以 SVG data URI 返回；step-up 因子 S1 只接受密码 / TOTP</td></tr><tr><td>S1-IDP-007</td><td>绑定票据有效期（建议 10 分钟）与 <code>AUTH_BINDING_CONFLICT</code>（409）/ <code>AUTH_BINDING_EXPIRED</code>；回调处理后 302 到 <code>/login/connector/{id}?flow=</code> 读 <code>next</code>；上游 <code>error_description</code> 不透传</td></tr><tr><td>S1-IDP-008</td><td>工作台免登失败态文案与「改用其他方式登录」出口；企微 JS SDK 域名只在连接器对当前 <code>tenant_hint</code> 挂载时进 CSP</td></tr><tr><td>S1-YUE-006</td><td>新增组合件（<code>AuthLayout</code>、<code>AuthErrorNotice</code>、<code>CountdownText</code>、<code>CaptchaField</code>、<code>PasswordPolicyChecklist</code>、连接器按钮图标槽）放 <code>@yue/shell</code>，各带 <code>*.browser.test.tsx</code> / <code>*.ssr.test.tsx</code> / 场景登记；Icon 入口扩 copy / refresh / sun / moon / search；登录表单经 <code>@yue/form</code>；<code>auth.*</code> 三语言包；375×667 与 1440×900 axe + 截图基线；每页一个 <code>h1</code>；testId 命名 <code>auth-&lt;page&gt;-&lt;element&gt;</code></td></tr><tr><td>S1-YUE-002</td><td>平台代管横幅（数据来自 <code>qian.tenancy</code>）；上次登录提示 Toast；无实时通道时的两档验收（≤ 3s 仅在有通道时）；<code>returnTo</code> 白名单；<code>BroadcastChannel</code> 多标签同步</td></tr><tr><td>IDP-012（候选）</td><td>设备授权端点与显式 <code>ConsentType</code> 开启；<code>/device</code>、<code>/consent</code>、<code>/connect/error</code> 页面；<code>identity.consent.v1</code> 审计事件；user_code 不进日志与 URL</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="7-明确不做与阶段延后"><a href="#7-明确不做与阶段延后" class="rp-header-anchor rp-link" aria-label="链接到 7 明确不做与阶段延后">#</a>7 明确不做与阶段延后</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>项</th><th>处置</th></tr></thead><tbody><tr><td>短信 / 邮箱 OTP 作第二因子、Passkey、恢复码、可信设备「30 天不再验证」</td><td>S3（PRD 13.3.2）；S1 MFA 页只有 TOTP</td></tr><tr><td>邮箱 OTP 一等因子</td><td>待 Q20；拍板前只预留渠道 Segmented 槽位</td></tr><tr><td>租户自助配 IdP、邮箱域发现（HRD）、域名验证、品牌登录域、租户主题</td><td>S3；S1 用租户号 + <code>data-brand</code> 注入点</td></tr><tr><td>扫码登 PC、SAML / CAS / LDAP、自助注册 / 申请 / 邀请 / 注销</td><td>S3</td></tr><tr><td>钉钉 / 飞书 / 微信网站扫码、桌面端内嵌企微二维码面板</td><td>S2（只是连接器条目；内嵌面板需 <code>ConnectorPanel</code> + CSP 白名单）</td></tr><tr><td>「记住我 / 保持登录 / 记住账号」</td><td>不做；refresh 14 天与单端 / 并发策略由服务端决定，前端只记租户号与上次方式</td></tr><tr><td>「记住此授权决定」、scope 必需 / 可选裁剪、已授权应用管理页</td><td>S2；S1 每次询问、整体允许 / 拒绝</td></tr><tr><td>外部 SaaS 图形验证码</td><td>不做（与 D5.10 私有化冲突）；Captcha 自托管且 S1-P2，音频替代 S2</td></tr><tr><td>显示剩余尝试次数、区分「账号不存在 / 密码错误 / 已锁定」、给具体解锁时间</td><td>不做（防枚举）</td></tr><tr><td>弹窗内嵌登录表单、iframe 嵌入登录页、<code>prompt=none</code> 的 iframe 静默登录</td><td>不做（<code>frame-ancestors &#x27;none&#x27;</code>，令牌不进 iframe）</td></tr><tr><td>前端密码哈希、接口体加密、锁屏</td><td>不做（PRD 7.9、7.15.1、13.10 第 5 条）</td></tr><tr><td>登录页公告 / 营销位 / 轮播 / 第三方统计脚本</td><td>不做</td></tr><tr><td>个人中心（资料、改密、社交账号绑定解绑、TOTP 管理、会话列表与下线、换绑）</td><td>归 IDP-006 个人中心最小集，不在本页族</td></tr><tr><td>管理员重置他人密码 / MFA、批量强制下线、在线用户</td><td>TEN-010 / IDP-004 管理面，<code>humanOnly</code>（13.5）</td></tr><tr><td>「同时退出所有设备」勾选项</td><td>S1 不在登出页；revoke-all 归个人中心</td></tr><tr><td>新增 <code>@yue/core</code> 组件</td><td>不新增；组合件全部放 <code>@yue/shell</code>（§5.5 首屏预算）；Steps 用 <code>ol</code> + <code>aria-current</code>，二维码用服务端 SVG</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="8-待产品负责人确认"><a href="#8-待产品负责人确认" class="rp-header-anchor rp-link" aria-label="链接到 8 待产品负责人确认">#</a>8 待产品负责人确认</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>编号</th><th>问题</th><th>默认建议</th></tr></thead><tbody><tr><td>D1</td><td>认证页族宿主：凭据页面（登录 / MFA / 选租户 / 改密 / 绑定 / 设备码 / 同意）由 <code>qian.identity</code> 宿主同源挂载 <code>@yue/shell</code> 认证页库（identity profile 提供静态制品），外壳只做 RP 侧；S1-YUE-002 / YUE-006 / IDP-003 的任务文本「登录在外壳」需改口；R31「shell 制品随 platform 镜像经 gateway 提供」需补 identity 侧托管一条</td><td>接受同源托管；若否，外壳跨源 POST 凭据的 CSRF / SameSite 方案须重做且「密码不经 RP JavaScript」前提失效</td></tr><tr><td>D2</td><td>面向终端用户的租户叫法：按 11.2 词表用「租户」、按 7.3 租户主档用「租户号」；或在词表新增「组织 = 租户的用户可见别名」并把 7.4.3 的「组织」改称「部门」</td><td>用「租户」；不单方面改词表</td></tr><tr><td>D3</td><td>防枚举口径：凭据校验前一律 <code>AUTH_CREDENTIALS_INVALID</code>，锁定 / 停用 / 租户状态 / 仅企业 IdP 只在凭据正确后可见；锁定通知只经 7.12；不给具体解锁时间</td><td>接受；代价是输错密码的被锁用户只看到「账号或密码不正确」，靠短信知晓</td></tr><tr><td>D4</td><td><code>login-options</code> 对已知租户号返回租户名、LOGO 与连接器列表，等于公开「该租户存在且用哪家 IdP」；对标项目普遍接受此暴露</td><td>接受，按 IP 限流 + 未知即默认集；S3 域名验证后收紧</td></tr><tr><td>D5</td><td>外壳取令牌模型：网关 BFF Cookie 会话（<code>qian.sid</code>，Kun <code>Identity.Client</code> 服务端换码，外壳经 <code>POST /auth/session/token</code> 换 15 分钟内存 Bearer，需自定义请求头 + 不放行 CORS）vs 外壳 SPA 直接换码（<code>code_verifier</code> 在 sessionStorage）</td><td>BFF Cookie 模型（与 PRD 7.9 / IDP-005 一致）；由 YUE-002 / IDP-005 登记</td></tr><tr><td>D6</td><td>认证失败的状态码归类：登录失败 / 锁定归 422 业务错误、延时归 429 <code>RATE_LIMITED</code>，401 <code>UNAUTHENTICATED</code> 只给「缺凭据 / 会话失效」；与 contracts/v0 R46 对齐</td><td>接受；<code>AUTH_SESSION_REVOKED</code> 作 401 的子码提案</td></tr><tr><td>D7</td><td><code>trace_id</code> 对终端用户的可见性：PRD 11.1 说机器面向信息对终端用户不出现；本规格折叠为「错误编号」并由 <code>__APP_CONF__.support.showTechDetails</code> 门控（非生产默认展开）</td><td>折叠展示、生产默认折叠但可展开；无编号企业 IT 无法报障</td></tr><tr><td>D8</td><td>登录域与外壳域不同源时的主题 / 语言偏好：登录域默认跟随系统 + 自带切换；或 authorize 带 <code>ui_locales</code> / 主题参数透传</td><td>跟随系统 + 自带切换；<code>ui_locales</code> 透传语言</td></tr><tr><td>D9</td><td>权限变更的前端行为：ADR-005 D5.4 / 7.4.1 把「权限变更」列为会话失效触发，PRD 13.3.3 第 5 条说令牌可用到刷新；本规格按 <code>identityRevisionChanged</code> 静默刷新 + Toast，不跳登录</td><td>按 13.3.3 第 5 条静默刷新；需一次文档裁决消除 ADR / PRD 内部不一致</td></tr><tr><td>D10</td><td>会话失效「≤ 3s」依赖 7.13.2 实时通道；备忘录建议砍 SCH-003 并改「明确不支持」</td><td>两档验收：有通道 ≤ 3s；无通道（v0）下一请求被拒 → 刷新失败 → 对话框</td></tr><tr><td>D11</td><td><code>tenant_hint</code> 作为 authorize 的 Qian 私有扩展参数并在 discovery 声明；登录页 <code>?tenant=</code> 与路径 <code>/t/{code}/login</code> 别名</td><td>接受扩展参数；否则登录前无法按租户 scope 过滤连接器，IDP-008 验收要改为登录后判定</td></tr><tr><td>D12</td><td>改密后当前设备会话是否豁免（7.4.1 字面为「全部会话 ≤ 5s 失效」）</td><td>豁免当前 sid，服务端重签；IDP-003 / 004 提供语义并在审计区分</td></tr><tr><td>D13</td><td>设备码 / 同意页 / <code>/connect/error</code> 的立项：依赖 Q22 / Q5 / Q25 拍板与候选 IDP-012；备忘录 §7.2 把 YUE-001 / 002 / 006 列为 v0.1 可选，而 v0 需要取令牌通道</td><td>这三页在 v0 由 identity 宿主以同源静态制品提供（与 D1 一致），不依赖外壳</td></tr><tr><td>D14</td><td>Captcha 与无障碍冲突：若策略要求对匿名发码强制图形验证码〔已删节〕，视障用户无替代路径</td><td>Captcha 默认关、只按策略开，优先延时 / 锁定与发码预算；开启的租户在策略说明里标注并提供管理员通道；音频替代 S2</td></tr></tbody></table></div>
+<h2 class="rp-toc-include" id="9-评审纠错记录去重"><a href="#9-评审纠错记录去重" class="rp-header-anchor rp-link" aria-label="链接到 9 评审纠错记录（去重）">#</a>9 评审纠错记录（去重）</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar" tabindex="0" role="region" aria-label="可滚动表格"><table><thead><tr><th>#</th><th>原设计表述</th><th>纠正</th><th>依据</th></tr></thead><tbody><tr><td>1</td><td>用「组织 / 组织标识 / 切换组织」指代租户</td><td>改为「租户 / 租户号 / 切换租户」（D2）</td><td>11.2 词表；7.3「租户号」；7.4.3「组织」为组织树</td></tr><tr><td>2</td><td>MFA 页列「短信验证码」为第二因子并与 TOTP 并列；「30 天内此设备不再验证」</td><td>S1 MFA 只有 TOTP；短信第二因子与可信设备 S3</td><td>13.3.2 MFA 行</td></tr><tr><td>3</td><td>锁定态显示 <code>locked_until</code>、延时 <code>retry_after</code>、「第 2 次失败起追加提示」；<code>OTP_CHANNEL_UNAVAILABLE</code>、<code>RECOVERY_NOT_AVAILABLE</code>、无 tenantHint 时 <code>LOGIN_METHOD_NOT_ALLOWED</code></td><td>全部为枚举信道，改按 D3 口径；删除两个区分性响应</td><td>13.3.2 防枚举；备忘录 §12.2 「未知标识同响应」</td></tr><tr><td>4</td><td>「账号已锁定……连接器仍可用」</td><td>锁定是 Person 级状态，所有方式一律拒绝</td><td>ADR-005 D5.4；13.3.3 第 2 条</td></tr><tr><td>5</td><td>租户状态词「已到期」、缺「只读」</td><td>待激活 / 宽限 / 只读 / 冻结 / 注销</td><td>7.3 状态机</td></tr><tr><td>6</td><td><code>Button variant=link</code></td><td>不存在；用 <code>ghost size=sm</code></td><td><code>button.tsx</code> 变体 primary / secondary / outline / ghost / destructive</td></tr><tr><td>7</td><td><code>tone=warning / success / destructive</code>、<code>Toast tone=</code></td><td><code>Tone = ok | warn | error | info | neutral</code>；<code>Toast</code> 无 tone，消息走 <code>useMessage</code></td><td><code>tokens.ts</code>、<code>notification.tsx</code></td></tr><tr><td>8</td><td>「<code>DropdownMenu</code> 不存在」（评审）与「<code>menuitemradio</code>」（设计）</td><td><code>index.ts</code> 以别名导出 <code>DropdownMenu*</code>；但无 RadioItem，当前项用可见文本 + <code>aria-current</code></td><td><code>packages/yue/core/src/index.ts</code>、<code>menu.tsx</code></td></tr><tr><td>9</td><td>「Result 标题为 h1」「CardTitle 承载页面标题」</td><td><code>Result</code> 为 <code>section</code> + <code>h2</code>，<code>CardTitle</code> 为 <code>h3</code>；每页另设 <code>h1</code></td><td><code>feedback.tsx</code>、<code>layout.tsx</code></td></tr><tr><td>10</td><td>「Esc 不关闭以符合 alertdialog 语义」</td><td>APG Alert Dialog 模式 Esc 关闭；禁用 Esc 是产品决策，经受控 <code>open</code> 实现</td><td>WAI-ARIA APG；Base UI AlertDialog</td></tr><tr><td>11</td><td>「只新增 Captcha 与连接器图标」</td><td>Icon 入口仅 14 个图形，还缺 copy / refresh / sun / moon / search</td><td><code>icon.tsx</code></td></tr><tr><td>12</td><td>「全部页面只用 @yue/core」</td><td>登录表单必须经 <code>@yue/form</code>（shell → form 唯一例外）</td><td>yue.md §3.1；S1-YUE-006</td></tr><tr><td>13</td><td>「对比度 ≥ 4.5:1 由 tokens CI 单测保证」用于 Alert 内 muted 文字</td><td>单测只覆盖 <code>contrastWith</code> 成对令牌；Alert 内不用 muted 色</td><td><code>tokens.test.ts</code></td></tr><tr><td>14</td><td>同意页「默认焦点在允许但 Enter 不触发」</td><td>默认焦点「拒绝」，两按钮正常响应；破坏性 scope 勾选前「允许」禁用</td><td>WCAG 2.2 2.1.1；原生 button 语义</td></tr><tr><td>15</td><td><code>PinInput length=8</code>（4-4 分组、自动大写）</td><td>8 槽 376px 在 375px 溢出；无分组 / 大写能力；改两组 4 位或 mono <code>Input</code></td><td><code>input.tsx</code> <code>size-10 gap-2</code></td></tr><tr><td>16</td><td>「按钮 44px（移动）/ 40px（桌面）」「按钮 <code>--yue-radius</code>」「radius .5rem」</td><td><code>--yue-button-height</code> 36px、<code>size=lg</code> 40px；按钮圆角 <code>--yue-button-radius</code>；<code>--yue-radius</code> = 0.625rem</td><td><code>registry.json</code></td></tr><tr><td>17</td><td>「页脚 Toggle 只写 data-theme」「尊重 data-theme 覆盖」</td><td>经 <code>ThemeController.setTheme</code>，写 localStorage <code>yue-theme</code>；<code>data-theme</code> 是输出</td><td><code>theme.ts</code> / <code>theme-init.js</code></td></tr><tr><td>18</td><td>「Spinner size=lg」、提交态「disabled + 内嵌 Spinner」</td><td><code>Spinner</code> 无 size、<code>label</code> 必填；提交用 <code>Button loading</code></td><td><code>feedback.tsx</code>、<code>button.tsx</code></td></tr><tr><td>19</td><td>「PinInput 每格有 aria-label」</td><td>第 1 格无 <code>aria-label</code>，依赖 sr-only 整组 label</td><td><code>input.tsx</code></td></tr><tr><td>20</td><td>禁用项用 Tooltip 提供原因</td><td>disabled 元素不可聚焦、Tooltip 不可达；原因作常驻可见文本</td><td><code>tooltip.tsx</code></td></tr><tr><td>21</td><td>焦点移到「首个 FieldError」；倒计时放在 <code>role=alert</code> 内；Checklist 每项变化即播报</td><td>焦点到首个无效控件；倒计时独立 <code>aria-live=polite</code> 节流；Checklist blur / 提交汇总播报</td><td>WCAG 4.1.3；<code>Alert</code> 默认 <code>role=status</code></td></tr><tr><td>22</td><td>「以 {displayName} 继续」适用于 <code>prompt=login</code></td><td><code>prompt=login</code> 必须重新认证</td><td>OIDC Core 1.0 §3.1.2.1；<code>IdentityProtocolEndpoints.cs</code> 对 prompt≠none 返回 interaction_required</td></tr><tr><td>23</td><td><code>/connect/consent</code>、<code>/connect/error</code> 作 React 页放 <code>/connect</code> 前缀；「OpenIddict 设备端点由 CLI 调用」为既有</td><td><code>/connect*</code> 现有 CSP <code>default-src &#x27;none&#x27;</code> 无 script-src；<code>ConsentType</code> 强制 Implicit；设备授权 flow 未启用；路由改 <code>/consent</code>，三者随 IDP-012</td><td><code>IdentityServerHosting.cs:40/80/100</code></td></tr><tr><td>24</td><td>「antiforgery 头由 <code>GET /account/antiforgery</code> 下发，与 <code>/connect/logout</code> 同一机制」</td><td><code>/connect/logout</code> 是服务端表单隐藏字段；cookie-to-header 为新提案</td><td><code>IdentityProtocolEndpoints.cs:125–136</code></td></tr><tr><td>25</td><td><code>/connect/logout</code> 画成 yue Card / Result</td><td>现为 identity 宿主自渲染裸 HTML；本规格要求引 tokens CSS 对齐并单独加截图基线</td><td>README「登出」节</td></tr><tr><td>26</td><td>「Q20 裁决『加，S1-B』」「Q22 接受」「IDP-012 候选已接受」</td><td>备忘录为草案，Q 均未拍板；表述改为「默认建议」</td><td>备忘录状态行</td></tr><tr><td>27</td><td>「Agent 专属 scope S4 启用」「act S4」</td><td>备忘录 §2.1 把 D18.5 前移 S1-A、§7.3 列入 IDP-012（v0）；本规格按条件标注</td><td>备忘录 §2.1 / §7.3</td></tr><tr><td>28</td><td>「权限 ⊆ 本人、仅限人工不授权（13.11）」出处</td><td>13.11 只在「越权 / 混淆代理」行（Agent 只拿委托人权限子集）与「身份冒用」行（<code>humanOnly</code> 服务端拒绝）各有一句；完整定义在 13.1.1 Agent 主体行、13.5、key-decisions Q26，引用时并列</td><td>13-security.md</td></tr><tr><td>29</td><td>「扫码登 PC 为 ADR-005 S3 项」</td><td>出自 PRD 7.4.1 ❌ 清单；ADR-005 §6 S3 未列</td><td>ADR-005 §6</td></tr><tr><td>30</td><td>评审称「<code>ConnectorDescriptor</code> 尚无 <code>DisplayName</code> 字段，属提案」</td><td>该字段已存在：<code>ConnectorDescriptor(Id, DisplayName, Protocol, Terminals, ConfigSchema)</code>；<code>login-options</code> 下发的 <code>displayName</code> 取自此，只有连接器图标字段仍属提案</td><td><code>packages/Qian.Identity.Abstractions/Contracts.cs:84</code></td></tr><tr><td>31</td><td>同意页「令牌最长 14 天」写死</td><td>由策略 / <code>expiresAt</code> 下发；14 天只是 issuer refresh 默认与 iClaw 过渡描述</td><td>README；备忘录 §12.4</td></tr><tr><td>32</td><td>「可在『安全 → 已授权的应用』随时撤销」（管理页 S2）</td><td>S1 文案改「联系租户管理员」，S2 起自助</td><td>§7</td></tr><tr><td>33</td><td><code>verification_uri_complete</code> 引作 RFC 8628 §3.3.1</td><td>定义在 §3.2；§3.3.1 是非文本 URI</td><td>RFC 8628</td></tr><tr><td>34</td><td><code>TOTP 绑定</code>、<code>/login/wecom</code>、<code>/account/security</code> 标 S1-P1；<code>/consent</code> 标 S1-P1；邮箱 Tab 标 S1-P2</td><td>TOTP 绑定 P0（7.4.1 E2E）但 S1-B；企微 S1-B；个人中心移出；同意页条件化；邮箱待 Q20</td><td>7.4.1；备忘录 §7.2</td></tr><tr><td>35</td><td>「权限变更 → 会话失效」归因于任务文本</td><td>ADR-005 D5.4 / 7.4.1 本身列入，与 13.3.3 第 5 条不一致，需文档裁决（D9）</td><td>ADR-005；13.3.3</td></tr><tr><td>36</td><td>「i18n 硬编码 lint」为现状；三语言只给两种</td><td>lint 尚未启用（yue.md §8）；补 zh-TW 口径与长度预算</td><td>yue.md §8</td></tr><tr><td>37</td><td>「RFC 9457 引用缺版本」</td><td>RFC 9457 Problem Details，IETF 2023-07</td><td>—</td></tr><tr><td>38</td><td>5 分钟选择令牌放 JS 内存</td><td>留在服务端 flow，页面只提交 <code>membership_id</code></td><td>XSS 攻击面</td></tr><tr><td>39</td><td><code>?reason=</code> 驱动文案、账号跨源预填</td><td>reason 只接受白名单且优先服务端一次性 Cookie；不预填</td><td>钓鱼铺垫；跨源内存不可达</td></tr><tr><td>40</td><td>缺平台代管横幅、上次登录提示、企微工作台免登、<code>/connect/error</code></td><td>已补 §4.9 / §4.8 / §4.14 / §4.17</td><td>7.15.1；13.3.2；IDP-008；OIDC Core §3.1.2.6</td></tr></tbody></table></div><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/design/prd/17-references.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>17. 借鉴声明</span></span></a><a href="/design/prd/specs/component-model.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>专题 spec · 组件模型 v2（清单 · 表面 · 运行时 · profile · 市场 · CLI）</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#1-设计原则" class="rp-toc-item rp-link" title="1 设计原则" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">1 设计原则</span></a><a href="#2-信息架构" class="rp-toc-item rp-link" title="2 信息架构" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">2 信息架构</span></a><a href="#3-端到端流程" class="rp-toc-item rp-link" title="3 端到端流程" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">3 端到端流程</span></a><a href="#31-人类登录全流程" class="rp-toc-item rp-link" title="3.1 人类登录全流程" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.1 人类登录全流程</span></a><a href="#32-agent--cli-取令牌与同意流程" class="rp-toc-item rp-link" title="3.2 Agent / CLI 取令牌与同意流程" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">3.2 Agent / CLI 取令牌与同意流程</span></a><a href="#4-逐页规格" class="rp-toc-item rp-link" title="4 逐页规格" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">4 逐页规格</span></a><a href="#41-登录页-loginflows1-p0" class="rp-toc-item rp-link" title="4.1 登录页 /login?flow=（S1-P0）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.1 登录页 <code>/login?flow=</code>（S1-P0）</span></a><a href="#42-第二因子验证-loginmfaflows1-p0totp-随-idp-006" class="rp-toc-item rp-link" title="4.2 第二因子验证 /login/mfa?flow=（S1-P0；TOTP 随 IDP-006）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.2 第二因子验证 <code>/login/mfa?flow=</code>（S1-P0；TOTP 随 IDP-006）</span></a><a href="#43-租户选择-loginselect-tenantflows1-p0" class="rp-toc-item rp-link" title="4.3 租户选择 /login/select-tenant?flow=（S1-P0）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.3 租户选择 <code>/login/select-tenant?flow=</code>（S1-P0）</span></a><a href="#44-强制修改密码-loginchange-passwordflows1-p0" class="rp-toc-item rp-link" title="4.4 强制修改密码 /login/change-password?flow=（S1-P0）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.4 强制修改密码 <code>/login/change-password?flow=</code>（S1-P0）</span></a><a href="#45-连接器出站中转与回调落点-loginconnectorconnectoridflows1-p0" class="rp-toc-item rp-link" title="4.5 连接器出站中转与回调落点 /login/connector/{connectorId}?flow=（S1-P0）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.5 连接器出站中转与回调落点 <code>/login/connector/{connectorId}?flow=</code>（S1-P0）</span></a><a href="#46-确认绑定-loginbindflows1-p0" class="rp-toc-item rp-link" title="4.6 确认绑定 /login/bind?flow=（S1-P0）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.6 确认绑定 <code>/login/bind?flow=</code>（S1-P0）</span></a><a href="#47-外壳回调态-authcallbacks1-p0外壳" class="rp-toc-item rp-link" title="4.7 外壳回调态 /auth/callback（S1-P0，外壳）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.7 外壳回调态 <code>/auth/callback</code>（S1-P0，外壳）</span></a><a href="#48-会话弹窗族s1-p0外壳全局" class="rp-toc-item rp-link" title="4.8 会话弹窗族（S1-P0，外壳全局）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.8 会话弹窗族（S1-P0，外壳全局）</span></a><a href="#49-租户切换器与平台代管横幅s1-p0外壳" class="rp-toc-item rp-link" title="4.9 租户切换器与平台代管横幅（S1-P0，外壳）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.9 租户切换器与平台代管横幅（S1-P0，外壳）</span></a><a href="#410-登出确认-connectlogouts1-p0服务端渲染" class="rp-toc-item rp-link" title="4.10 登出确认 /connect/logout（S1-P0，服务端渲染）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.10 登出确认 <code>/connect/logout</code>（S1-P0，服务端渲染）</span></a><a href="#411-短信验证码登录login-验证码-tabs1-p1--s1-b" class="rp-toc-item rp-link" title="4.11 短信验证码登录（/login 验证码 Tab，S1-P1 · S1-B）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.11 短信验证码登录（<code>/login</code> 验证码 Tab，S1-P1 · S1-B）</span></a><a href="#412-找回密码-loginforgotflow--loginresets1-p1--s1-b" class="rp-toc-item rp-link" title="4.12 找回密码 /login/forgot?flow= → /login/reset（S1-P1 · S1-B）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.12 找回密码 <code>/login/forgot?flow=</code> → <code>/login/reset</code>（S1-P1 · S1-B）</span></a><a href="#413-totp-绑定-loginmfaenrollflows1-p0--s1-b" class="rp-toc-item rp-link" title="4.13 TOTP 绑定 /login/mfa/enroll?flow=（S1-P0 · S1-B）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.13 TOTP 绑定 <code>/login/mfa/enroll?flow=</code>（S1-P0 · S1-B）</span></a><a href="#414-企业微信工作台免登中转-loginwecomflows1-p0--s1-b" class="rp-toc-item rp-link" title="4.14 企业微信工作台免登中转 /login/wecom?flow=（S1-P0 · S1-B）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.14 企业微信工作台免登中转 <code>/login/wecom?flow=</code>（S1-P0 · S1-B）</span></a><a href="#415-设备码授权-device--deviceconfirmflow--devicedone条件q22--idp-012" class="rp-toc-item rp-link" title="4.15 设备码授权 /device → /device/confirm?flow= → /device/done（条件：Q22 / IDP-012）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.15 设备码授权 <code>/device</code> → <code>/device/confirm?flow=</code> → <code>/device/done</code>（条件：Q22 / IDP-012）</span></a><a href="#416-授权同意-consentflow条件q5--q22--q25--idp-012" class="rp-toc-item rp-link" title="4.16 授权同意 /consent?flow=（条件：Q5 / Q22 / Q25 / IDP-012）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.16 授权同意 <code>/consent?flow=</code>（条件：Q5 / Q22 / Q25 / IDP-012）</span></a><a href="#417-授权请求无效-connecterrors1-p1" class="rp-toc-item rp-link" title="4.17 授权请求无效 /connect/error（S1-P1）" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">4.17 授权请求无效 <code>/connect/error</code>（S1-P1）</span></a><a href="#5-视觉规范" class="rp-toc-item rp-link" title="5 视觉规范" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">5 视觉规范</span></a><a href="#6-验收映射" class="rp-toc-item rp-link" title="6 验收映射" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">6 验收映射</span></a><a href="#7-明确不做与阶段延后" class="rp-toc-item rp-link" title="7 明确不做与阶段延后" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">7 明确不做与阶段延后</span></a><a href="#8-待产品负责人确认" class="rp-toc-item rp-link" title="8 待产品负责人确认" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">8 待产品负责人确认</span></a><a href="#9-评审纠错记录去重" class="rp-toc-item rp-link" title="9 评审纠错记录（去重）" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">9 评审纠错记录（去重）</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh">
+  <head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracing Tour: Reading Distributed Traces in the Aspire Dashboard - Qian 文档</title>
+<script>{;const saved = localStorage.getItem('rspress-theme-appearance');const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;const defaultTheme = 'auto';const theme = saved === 'light' || saved === 'dark' || saved === 'auto' ? saved : defaultTheme;const isDark = theme === 'auto' ? preferDark : theme === 'dark';document.documentElement.classList.toggle('dark', isDark);document.documentElement.classList.toggle('rp-dark', isDark);document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';}</script>
+<script>(function(){var r=document.documentElement;function s(){var t=r.classList.contains('dark')?'dark':'light';if(r.getAttribute('data-theme')!==t)r.setAttribute('data-theme',t)}s();new MutationObserver(s).observe(r,{attributes:true,attributeFilter:['class']})})();</script>
+<link href="/pr-preview/pr-50/static/css/styles.b0a6adadfb.css" rel="stylesheet">
+<link rel="preload" href="/pr-preview/pr-50/static/js/async/route-fee95c661cb0.cc445c5a57.js" as="script">
+<script defer src="/pr-preview/pr-50/static/js/styles.e17d1103f0.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-react.50abd11734.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/lib-router.081cdedb3d.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/l.17b56459a8.js"></script>
+<script defer src="/pr-preview/pr-50/static/js/index.9cbf315c7d.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Rspress v2.0.23">
+<link rel="icon" href="/pr-preview/pr-50/logo.svg" type="image/svg+xml">
+<link rel="alternate" type="text/markdown" href="/pr-preview/pr-50/sdk/kun/guides/tracing-tour.md">
+<link rel="describedby" href="/pr-preview/pr-50/llms.txt">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Tracing Tour: Reading Distributed Traces in the Aspire Dashboard - Qian 文档">
+<meta name="description" content="This document walks through the OpenTelemetry traces you will see when running the Kun sample stack via dotnet run --pr…">
+<meta property="og:description" content="This document walks through the OpenTelemetry traces you will see when running the Kun sample stack via dotnet run --pr…"></head>
+
+  <body>
+    <div id="__rspress_root"><link rel="preload" as="image" href="/pr-preview/pr-50/logo.svg"/><div class="rp-llms-hint" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);clip-path:inset(50%);white-space:nowrap;border:0">For AI agents: the complete documentation index is available at /pr-preview/pr-50/llms.txt, the full documentation bundle is available at /pr-preview/pr-50/llms-full.txt, and this page is available as Markdown at /pr-preview/pr-50/sdk/kun/guides/tracing-tour.md.</div><script data-rp-banner-hidden-class="rp-banner-_R_1i_-hidden" data-rp-banner-storage="localStorage" data-rp-banner-storage-key="qian-docs-s1-banner">(function () {
+  var script = document.currentScript;
+  if (!script) return;
+  try {
+    var storage = window[script.dataset.rpBannerStorage];
+    var storageKey = script.dataset.rpBannerStorageKey;
+    var hiddenClass = script.dataset.rpBannerHiddenClass;
+    if (storage && storageKey && hiddenClass && storage.getItem(storageKey)) {
+      document.documentElement.classList.add(hiddenClass);
+    }
+  } catch (e) {}
+})();</script><style>:root {--rp-banner-height: 36px;} :root.rp-banner-_R_1i_-hidden {--rp-banner-height: 0px;} :root.rp-banner-_R_1i_-hidden .rp-banner-_R_1i_ {display: none;}</style><div class="rp-banner rp-banner-_R_1i_"><a href="/pr-preview/pr-50/design/roadmap" class="rp-banner__link rp-link" title="S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →">S1 建设中：文档按设计目标编写，组件与命令随 S1 任务陆续可用；标 S2–S4 的能力尚未开始。查看路线图 →</a><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32" class="rp-banner__close"><path fill="currentColor" d="M24 9.4 22.6 8 16 14.6 9.4 8 8 9.4l6.6 6.6L8 22.6 9.4 24l6.6-6.6 6.6 6.6 1.4-1.4-6.6-6.6z"></path></svg></div><header class="rp-nav"><div class="rp-nav__left"><div class="rp-nav__title"><a href="/pr-preview/pr-50/" class="rp-nav__title__link rp-link"><div class="rp-nav__title__logo"><img src="/pr-preview/pr-50/logo.svg" alt="logo" id="logo" class="rspress-logo rp-nav__title__logo-image"/></div><span>Qian 文档</span></a></div></div><div class="rp-nav__right"><button class="rp-search-button"><div class="rp-search-button__content"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21" class="rp-search-button__icon"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg><span class="rp-search-button__word">搜索</span></div><div class="rp-search-button__hotkey" style="opacity:0"><span></span><span>K</span></div></button><div class="rp-search-button--mobile"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 20 21"><path fill="currentColor" d="M8.333 1.913A6.667 6.667 0 0 1 15 8.58c0 1.54-.525 2.957-1.402 4.085l4.49 4.492a.834.834 0 0 1-1.177 1.178l-4.491-4.49a6.64 6.64 0 0 1-4.087 1.402 6.667 6.667 0 0 1 0-13.334m0 1.667a5 5 0 1 0 0 10 5 5 0 0 0 0-10"></path></svg></div><ul class="rp-nav-menu rp-nav-menu--right"><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/start/index.html" class="rp-nav-menu__item__container rp-link">开始</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/components/index.html" class="rp-nav-menu__item__container rp-link">组件目录</a></li><li class="rp-nav-menu__item rp-nav-menu__item--active"><a href="/pr-preview/pr-50/sdk/index.html" class="rp-nav-menu__item__container rp-link">SDK</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/cli/index.html" class="rp-nav-menu__item__container rp-link">CLI 与规格</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/ops/index.html" class="rp-nav-menu__item__container rp-link">运维</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/marketplace/index.html" class="rp-nav-menu__item__container rp-link">市场与 ISV</a></li><li class="rp-nav-menu__item"><a href="/pr-preview/pr-50/design/index.html" class="rp-nav-menu__item__container rp-link">设计与路线</a></li><li class="rp-nav-menu__item"><div class="rp-nav-menu__item__container">产品<svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-nav-menu__item__icon"><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></div><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--center"><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-hover-group__item__link rp-link" aria-label="用 AI 构建">用 AI 构建</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/start/hosts.html" class="rp-hover-group__item__link rp-link" aria-label="构建应用">构建应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/index.html" class="rp-hover-group__item__link rp-link" aria-label="多租户平台">多租户平台</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/components/platform/qian.gateway.html" class="rp-hover-group__item__link rp-link" aria-label="保护应用">保护应用</a></li><li class="rp-hover-group__item" style="padding-left:8px" data-depth="0"><a href="/pr-preview/pr-50/ops/index.html" class="rp-hover-group__item__link rp-link" aria-label="部署与运维">部署与运维</a></li></ul></li></ul><div class="rp-nav__others"><div class="rp-nav-menu__divider"></div><div class="rp-switch-appearance"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" class="rp-switch-appearance__icon rp-switch-appearance__icon--sun"><path fill="currentColor" d="m7.001 15.848-1.226 1.226a.58.58 0 0 0 0 .818.58.58 0 0 0 .818 0l1.226-1.226a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0m-.352-8.735a.584.584 0 0 0 .825-.825L6.237 5.051a.584.584 0 0 0-.825.825zM5.011 11.07h-1.75a.584.584 0 0 0 0 1.167h1.75c.324 0 .584-.26.584-.583a.585.585 0 0 0-.584-.584m7.003-5.835c.324 0 .584-.26.584-.584V2.9a.58.58 0 0 0-.584-.584.58.58 0 0 0-.583.583V4.65c0 .323.262.584.583.584m5.616 1.621 1.226-1.225a.58.58 0 0 0 0-.818.58.58 0 0 0-.818 0l-1.226 1.225a.58.58 0 0 0 0 .818.576.576 0 0 0 .818 0m3.138 4.214h-1.75a.58.58 0 0 0-.584.584c0 .324.26.584.583.584h1.751a.584.584 0 1 0 0-1.167m-3.389 5.124a.584.584 0 0 0-.825.825l1.238 1.238a.584.584 0 0 0 .825-.826zm-5.365-9.795a5.256 5.256 0 0 0-5.257 5.258 5.256 5.256 0 0 0 5.257 5.257 5.256 5.256 0 0 0 5.257-5.257 5.256 5.256 0 0 0-5.257-5.258m0 11.675a.58.58 0 0 0-.583.583v1.751a.582.582 0 1 0 1.167 0v-1.75a.584.584 0 0 0-.584-.584"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" fill="currentColor" viewBox="0 0 19 19" class="rp-switch-appearance__icon rp-switch-appearance__icon--moon"><path fill="currentColor" d="M9.166 0a9.2 9.2 0 0 1 1.857.188.834.834 0 0 1 .042 1.623 4.47 4.47 0 1 0 5.457 5.457l.048-.135a.834.834 0 0 1 1.575.177q.186.902.188 1.856A9.168 9.168 0 1 1 9.166 0"></path></svg></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__sm"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg></button><button aria-label="mobile hamburger" class="rp-nav-hamburger rp-nav-hamburger__md"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.667" d="M3.645 5.225h13.333M3.645 10.225h13.333M3.645 15.225h13.333"></path></svg><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"><div class="rp-nav-menu__others-mobile__container"><div class="rp-nav-hamburger__md__hover-group"><div class="rp-nav-screen-appearance"><div class="rp-nav-screen-appearance__left">主题</div><div class="rp-nav-screen-appearance__right"></div></div><div class="rp-nav-screen-divider"></div><div class="rp-social-links"><a href="https://github.com/idadawn/qian" target="_blank" rel="noopener noreferrer" class="rp-social-links__item"><div class="rp-social-links__icon"><div class="rp-social-links__icon"><svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12c0 5.303 3.438 9.8 8.205 11.385c.6.113.82-.258.82-.577c0-.285-.01-1.04-.015-2.04c-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729c1.205.084 1.838 1.236 1.838 1.236c1.07 1.835 2.809 1.305 3.495.998c.108-.776.417-1.305.76-1.605c-2.665-.3-5.466-1.332-5.466-5.93c0-1.31.465-2.38 1.235-3.22c-.135-.303-.54-1.523.105-3.176c0 0 1.005-.322 3.3 1.23c.96-.267 1.98-.399 3-.405c1.02.006 2.04.138 3 .405c2.28-1.552 3.285-1.23 3.285-1.23c.645 1.653.24 2.873.12 3.176c.765.84 1.23 1.91 1.23 3.22c0 4.61-2.805 5.625-5.475 5.92c.42.36.81 1.096.81 2.22c0 1.606-.015 2.896-.015 3.286c0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></div></div></a><ul class="rp-hover-group rp-hover-group--hidden rp-hover-group--right"></ul></div></div></div></ul></button></div></header><div class="rp-doc-layout__menu"><div class="rp-sidebar-menu"><button type="button" class="rp-sidebar-menu__left"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M4 6h24v2H4zm0 18h24v2H4zm0-12h24v2H4zm0 6h24v2H4z"></path></svg><span>菜单</span></button><button type="button" class="rp-sidebar-menu__right"><span class="rp-sidebar-menu__right__text">目录</span><svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-sidebar-menu__right__icon" style="transform:rotate(0deg);transition:transform 0.2s ease-out"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></button></div></div><div class="rp-doc-layout__container"><aside class="rp-doc-layout__sidebar rp-scrollbar"><a href="/pr-preview/pr-50/sdk/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">Kun 框架</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/with-qian.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">与 Qian 的关系</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/getting-started.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">上手</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/modules.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模块地图</span></div><div class="rp-sidebar-item__right"></div></a><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">指南</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/guides/gateway-rate-limit.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Gateway 限流策略指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/identity-client.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Identity 客户端、浏览器会话与迁移</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/orchestrating-sagas.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Saga 编排指南（Orchestration）</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/outbox-and-integration-events.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Outbox + Integration Events 指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/read-side-patterns.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Read-Side Patterns: Writing Query Handlers</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/saas-multitenancy.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">SaaS 多租户策略选型指南</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/schema-per-service.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Schema-per-service with KunDbContext</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/tracing-tour.html" class="rp-sidebar-item rp-sidebar-item--active rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Tracing Tour: Reading Distributed Traces in the Aspire Dashboard</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/guides/validating-commands.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Command 校验指南（Kun.Validation）</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">安全</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/security/audit-log.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">审计：同事务实体记录与 PostgreSQL 命令哈希链</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/security/multi-tenancy-rls.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Multi-Tenancy: Row-Level Security as Defence in Depth</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/security/s2s-jwt.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Service-to-Service JWT Authentication</span></div><div class="rp-sidebar-item__right"></div></a></div></div><div class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">设计说明与 ADR</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></div><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/architecture/why-cqrs.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Splits Writes from Reads</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/why-outbox.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Uses the Outbox Pattern</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/why-saga.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Why Kun Uses Saga Orchestration</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/when-to-use-currentuser.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">When to use ICurrentUser vs IAuthenticatedUser</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-001-kun-identity-module-decision.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-001 Do Not Introduce a New Kun.Identity Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-003-kun-audit-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-003 Introduce Kun.Audit and Kun.Audit.EntityFrameworkCore Modules</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-004-kun-observability-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-004 Introduce Kun.Observability Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-005-kun-caching-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-005 Introduce Kun.Caching Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-006-kun-ratelimit-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-006 Introduce Kun.RateLimit Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-007-kun-multitenancy-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-007 Introduce Kun.MultiTenancy and Kun.MultiTenancy.EntityFrameworkCore Modules</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-008-kun-identity-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-008 Introduce Kun.Identity Module — Reversing ADR-001</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-009-kun-configuration-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-009 Introduce Kun.Configuration Module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-010-kun-identity-cookie-session.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-010 Add Cookie Session + IAuthenticatedUser to Kun.Identity</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-011-result-async-extensions.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-011 Result&lt;T&gt; composition extensions (sync + async)</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-012-kun-testing-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-012 Introduce Kun.Testing module</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-013-kun-observability-enricher.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-013 Baggage-driven activity enricher for Kun.Observability</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-014-validation-result-behavior.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-014 Result-returning validation pipeline behavior</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-015-outbox-pattern.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-015 Outbox pattern design for Kun.EventBus</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-016-platform-ports.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-016 配置可靠性、权限端口与能力目录</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-p2d-multitenancy.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR P2-D SaaS 多租户 3-策略架构</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/architecture/adr-s02-kun-sandbox-module.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">ADR-S02 Introduce Kun.Sandbox Module — E2B-compatible sandbox abstraction for Kun consumers</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/kun/whitepaper.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">白皮书</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/releases/index.html" class="rp-sidebar-item rp-sidebar-group rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志与发布说明</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(0deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:0fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/kun/releases/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">变更日志</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/kun/releases/v0-1-0-phase1.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 2 + 12px)" data-depth="2"><div class="rp-sidebar-item__left"><span class="rp-doc">Kun Framework — v0.1.0-phase1</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/api/kun/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">API 参考</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/dotnet/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">后端 SDK（.NET）</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/dotnet/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">编程模型</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/dotnet/capabilities.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">能力与函数</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/dotnet/events.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">事件与中间件</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/frontend/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">前端 SDK</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/frontend/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">编程模型</span></div><div class="rp-sidebar-item__right"></div></a></div></div><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-sidebar-item rp-sidebar-group rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">AI SDK</span></div><div class="rp-sidebar-item__right"><div style="cursor:pointer;transition:transform 0.2s ease-out;transform:rotate(90deg)"><svg width="1em" height="1em" viewBox="0 0 32 32"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></div></div></a><div style="display:grid;grid-template-rows:1fr;transition:grid-template-rows 0.2s ease-out"><div style="overflow:hidden"><a href="/pr-preview/pr-50/sdk/ai/index.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">AI SDK 概览</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/gateway.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">模型网关</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/agent-runtime.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">Agent 运行时对接</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/mcp.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">MCP</span></div><div class="rp-sidebar-item__right"></div></a><a href="/pr-preview/pr-50/sdk/ai/sandbox.html" class="rp-sidebar-item rp-sidebar-item--group-item rp-link" style="padding-left:calc(12px * 1 + 12px)" data-depth="1"><div class="rp-sidebar-item__left"><span class="rp-doc">沙箱</span></div><div class="rp-sidebar-item__right"><span class="rp-badge rp-badge--info">S4</span></div></a></div></div><a href="/pr-preview/pr-50/sdk/api/index.html" class="rp-sidebar-item rp-link" style="padding-left:12px" data-depth="0"><div class="rp-sidebar-item__left"><span class="rp-doc">API 参考</span></div><div class="rp-sidebar-item__right"></div></a></aside><div class="rp-doc-layout__doc"><main class="rp-doc-layout__doc-container"><div class="rp-doc rspress-doc"><!--$--><h1 class="rp-toc-include" id="tracing-tour-reading-distributed-traces-in-the-aspire-dashboard"><a href="#tracing-tour-reading-distributed-traces-in-the-aspire-dashboard" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Tracing Tour: Reading Distributed Traces in the Aspire Dashboard<!-- --> </h1><div class="rp-not-doc rp-llms-container"><button class="rp-not-doc rp-llms-button rp-llms-copy-button"><div class="rp-llms-copy-button__icon-wrapper"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-llms-copy-button__icon-copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg></div><span>复制 Markdown</span></button><button class="rp-llms-button rp-llms-view-options__trigger "><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-llms-view-options__arrow "><path fill="currentColor" d="M16 22 6 12l1.4-1.4 8.6 8.6 8.6-8.6L26 12z"></path></svg></button></div>
+<div class="rp-callout rp-callout--info"><div class="rp-callout__title">镜像页</div><div class="rp-callout__content"><p>
+本页镜像自 kun 仓库 <a href="https://github.com/idadawn/kun/blob/v2026.10.12-hotfix.3/docs/observability/tracing-tour.md" target="_blank" rel="noopener noreferrer" class="rp-link"><code>docs/observability/tracing-tour.md</code></a>（<code>v2026.10.12-hotfix.3</code>）。Kun 文档与代码不一致处以代码为准（<a href="/pr-preview/pr-50/design/adr/adr-001-kun-relationship.html" class="rp-link">ADR-001 D1.8</a>）；Qian 对 Kun 的选用与约束见<a href="/pr-preview/pr-50/sdk/kun/with-qian.html" class="rp-link">与 Qian 的关系</a>。改动请提到 kun 仓库。</p></div></div>
+<p>This document walks through the OpenTelemetry traces you will see when running the Kun sample
+stack via <code>dotnet run --project samples/Kun.Sample.AppHost</code>. It assumes Docker and the Aspire
+workload are installed and the stack is running. For setup instructions see
+<a href="/pr-preview/pr-50/sdk/kun/getting-started.html" class="rp-link">docs/getting-started.md</a>.</p>
+<hr/>
+<h2 class="rp-toc-include" id="w3c-trace-context-and-otlp"><a href="#w3c-trace-context-and-otlp" class="rp-header-anchor rp-link" aria-hidden="true">#</a>W3C Trace Context and OTLP</h2>
+<p>Every Kun service propagates traces using the
+<a href="https://www.w3.org/TR/trace-context/" target="_blank" rel="noopener noreferrer" class="rp-link">W3C Trace Context</a> standard. Each in-process span records
+a <code>traceparent</code> header that carries the <code>TraceId</code> and <code>SpanId</code>. When a request crosses a process
+boundary — HTTP, gRPC, or the Outbox — the receiving side extracts the parent context and creates
+a child span under the same <code>TraceId</code>. The result is a single trace tree that spans every hop
+from the initial HTTP request to the final consumer acknowledgement.</p>
+<p>Spans are exported via OTLP. When running under .NET Aspire the <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>
+environment variable is set automatically to the Aspire Dashboard&#x27;s collector endpoint. The
+Dashboard collects and renders all spans without any additional configuration in the services
+themselves. Framework modules (<code>src/Kun.*</code>) contain no OTel package dependencies — all
+<code>AddKunObservability</code> wiring lives in the sample composition root
+(<code>samples/Kun.Sample.Shared/OpenTelemetryExtensions.cs</code>) so the framework remains AOT-clean.</p>
+<hr/>
+<h2 class="rp-toc-include" id="what-instruments-what"><a href="#what-instruments-what" class="rp-header-anchor rp-link" aria-hidden="true">#</a>What Instruments What</h2>
+<h3 class="rp-toc-include" id="kunmediator"><a href="#kunmediator" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Kun.Mediator</h3>
+<p><strong>ActivitySource name:</strong> <code>Kun.Mediator</code></p>
+<p><code>TracingBehavior&lt;TRequest, TResponse&gt;</code> wraps every <code>ISender.Send</code> and <code>IPublisher.Publish</code> call
+(see <code>src/Kun.Mediator/Behaviors/TracingBehavior.cs</code>). It starts an <code>ActivityKind.Internal</code> span
+named <code>Mediator.Send {RequestTypeName}</code> — for example <code>Mediator.Send CreateProductCommand</code> or
+<code>Mediator.Send GetProductByIdQuery</code>.</p>
+<p>The span is a child of the ambient activity at dispatch time, which is typically the ASP.NET Core
+server span for the incoming HTTP request. Because the Mediator span is internal, it appears as a
+nested block directly under the HTTP span in the Dashboard timeline.</p>
+<p>Tags set on this span:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Tag</th><th>Value</th></tr></thead><tbody><tr><td>(none beyond span name)</td><td>The request type name is encoded in the span name</td></tr></tbody></table></div>
+<p>If you want to add custom tags (e.g. command ID, tenant ID), do so from within the handler by
+calling <code>Activity.Current?.SetTag(...)</code>.</p>
+<h3 class="rp-toc-include" id="kuneventbusoutbox"><a href="#kuneventbusoutbox" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Kun.EventBus.Outbox</h3>
+<p><strong>ActivitySource name:</strong> <code>Kun.EventBus.Outbox</code></p>
+<p><code>OutboxPublisherBackgroundService</code> starts one <code>ActivityKind.Producer</code> span named <code>outbox.publish</code>
+for each <code>OutboxMessage</code> it successfully publishes to the broker (see
+<code>src/Kun.EventBus/Background/OutboxPublisherBackgroundService.cs</code>).</p>
+<p>The critical detail is that the <strong>parent context is restored from the stored row</strong>, not from the
+current ambient activity. When <code>EfUnitOfWork.SaveChangesAsync</code> writes an <code>OutboxMessage</code> row, the
+<code>IntegrationEventOutboxAccumulator</code> captures <code>Activity.Current?.Id</code> and
+<code>Activity.Current?.TraceStateString</code> and stores them in the <code>TraceParent</code> and <code>TraceState</code>
+columns of the row. The background service reads those columns back hours or seconds later and
+calls <code>ActivityContext.TryParse(message.TraceParent, message.TraceState, ...)</code> to reconstruct the
+parent context before starting the publish span.</p>
+<p>This means the <code>outbox.publish</code> span appears as a <strong>child of the original producer span</strong> in the
+Dashboard, even though it runs in a different process tick, in a different background service
+invocation, potentially seconds after the HTTP response was already sent to the client.</p>
+<p>Tags set on <code>outbox.publish</code>:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Tag</th><th>Value</th></tr></thead><tbody><tr><td><code>messaging.system</code></td><td><code>outbox</code></td></tr><tr><td><code>messaging.destination</code></td><td>Stable event type ID, e.g. <code>product.published.v1</code></td></tr><tr><td><code>messaging.message_id</code></td><td>UUID of the <code>OutboxMessage</code> row</td></tr></tbody></table></div>
+<h3 class="rp-toc-include" id="kungrpc"><a href="#kungrpc" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Kun.Grpc</h3>
+<p><strong>ActivitySource name:</strong> <code>Kun.Grpc</code></p>
+<p><code>KunTracingInterceptor</code> (see <code>src/Kun.Grpc/Interceptors/KunTracingInterceptor.cs</code>) runs first in
+the interceptor chain registered by <code>AddKunGrpc</code>. It starts an <code>ActivityKind.Server</code> span named
+<code>grpc.server</code> for each unary, client-streaming, server-streaming or duplex RPC call. The span
+remains active until the awaited handler completes, including all stream operations.</p>
+<p>Tags set:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Tag</th><th>Value</th></tr></thead><tbody><tr><td><code>rpc.system</code></td><td><code>grpc</code></td></tr><tr><td><code>rpc.method</code></td><td>Full gRPC method path, e.g. <code>/catalog.CatalogService/GetProduct</code></td></tr><tr><td><code>rpc.type</code></td><td><code>unary</code>, <code>client_streaming</code>, <code>server_streaming</code> or <code>duplex_streaming</code></td></tr><tr><td><code>rpc.grpc.status_code</code></td><td>Final gRPC status code; faults also mark the activity as Error</td></tr></tbody></table></div>
+<p>If a downstream service calls a Kun gRPC service, the caller&#x27;s <code>HttpClient</code> instruments propagate
+the <code>traceparent</code> header via the standard gRPC client instrumentation wired in
+<code>AddKunObservability</code>. The server interceptor picks up the parent context automatically from the
+incoming metadata — <code>ActivityKind.Server</code> causes the OTel SDK to look for an inbound W3C header.</p>
+<h3 class="rp-toc-include" id="kunsaga"><a href="#kunsaga" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Kun.Saga</h3>
+<p><strong>ActivitySource name:</strong> <code>Kun.Saga</code></p>
+<p><code>SagaStepExecutor</code> (see <code>src/Kun.Saga/Orchestration/SagaStepExecutor.cs</code>) starts one
+<code>ActivityKind.Internal</code> span per step queue entry it processes. The span name encodes the
+direction:</p>
+<ul>
+<li><code>saga.step.execute</code> — forward execution of a step</li>
+<li><code>saga.step.compensate</code> — reverse compensation of a step</li>
+</ul>
+<p>Tags set:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Tag</th><th>Value</th></tr></thead><tbody><tr><td><code>saga.step_index</code></td><td>Zero-based index of the step in the saga definition</td></tr><tr><td><code>saga.saga_id</code></td><td>UUID of the <code>SagaInstance</code></td></tr><tr><td><code>saga.direction</code></td><td><code>Execute</code> or <code>Compensate</code></td></tr><tr><td><code>saga.name</code></td><td>Registered saga class name, e.g. <code>OrderCreationSaga</code></td></tr></tbody></table></div>
+<p>Note: these spans are started by the <code>SagaStepExecutor</code> background service polling loop. The
+background service does <strong>not</strong> restore a producer trace context from the saga instance row — the
+saga spans therefore appear as root spans or under whatever ambient activity the poll loop happens
+to inherit. Cross-trace correlation via <code>saga.saga_id</code> is the intended mechanism; see the
+<a href="#sagaid-as-cross-trace-correlation" class="rp-link">saga_id as cross-trace correlation</a> section below.</p>
+<hr/>
+<h2 class="rp-toc-include" id="how-to-read-a-happy-path-trace"><a href="#how-to-read-a-happy-path-trace" class="rp-header-anchor rp-link" aria-hidden="true">#</a>How to Read a Happy-Path Trace</h2>
+<p>The happy path is triggered by <code>POST /demo/happy-path</code> against the Order service. This is what
+you should see in the Aspire Dashboard Traces panel:</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>[HTTP POST /demo/happy-path]  ← ASP.NET Core server span (root)</span></span>
+<span class="line"><span>  └─ [Mediator.Send PlaceOrderCommand]  ← TracingBehavior span</span></span>
+<span class="line"><span>       └─ [outbox.publish order.completed.v1]  ← OutboxPublisherBackgroundService span</span></span>
+<span class="line"><span>            (parent context restored from OutboxMessage.TraceParent)</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>The saga step spans appear separately because the <code>SagaStepExecutor</code> runs in a background
+service:</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>[saga.step.execute]  saga.step_index=0, saga.name=OrderCreationSaga</span></span>
+<span class="line"><span>[saga.step.execute]  saga.step_index=1, saga.name=OrderCreationSaga</span></span>
+<span class="line"><span>[saga.step.execute]  saga.step_index=2, saga.name=OrderCreationSaga</span></span>
+<span class="line"><span>[saga.step.execute]  saga.step_index=3, saga.name=OrderCreationSaga</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>To correlate these saga step spans with the originating HTTP request, use the <code>saga.saga_id</code> tag
+(see the next section). Filter by the saga UUID in the Dashboard search bar to find all spans
+associated with a single saga instance.</p>
+<p>The timeline for the happy path looks like this in wall-clock order:</p>
+<ol>
+<li><code>POST /demo/happy-path</code> arrives. ASP.NET Core opens a server span.</li>
+<li><code>PlaceOrderCommand</code> is dispatched via <code>ISender.Send</code>. <code>TracingBehavior</code> opens a child span.</li>
+<li>The command handler calls <code>ISagaOrchestrator.StartAsync</code>. This writes a <code>SagaInstance</code> row and
+the first <code>SagaStepQueueEntry</code> row inside the same EF Core <code>SaveChangesAsync</code> transaction.</li>
+<li>The HTTP response is sent. The server span closes.</li>
+<li>Seconds later, <code>SagaStepExecutor</code> polls <code>FetchPendingStepsAsync</code> and finds the queue entry.
+It opens a <code>saga.step.execute</code> span and runs <code>ReserveInventoryStep.ExecuteAsync</code>. On success,
+it enqueues step 1 and marks the entry processed.</li>
+<li>Steps 1, 2, and 3 execute in sequence in subsequent poll cycles.</li>
+<li><code>NotifyCustomerStep</code> enqueues an <code>order.completed.v1</code> <code>OutboxMessage</code> row inside its
+<code>SaveChangesAsync</code> call. The <code>TraceParent</code> of the current <code>saga.step.execute</code> span is captured
+into the row.</li>
+<li><code>OutboxPublisherBackgroundService</code> polls, finds the pending message, restores the trace
+context from <code>TraceParent</code>, and opens an <code>outbox.publish</code> child span. The message is published
+to RabbitMQ and the row is marked <code>Published</code>.</li>
+</ol>
+<p>In the Dashboard, the <code>outbox.publish</code> span correctly appears as a descendant of the saga step
+that produced it, giving you the full causal chain in one view.</p>
+<hr/>
+<h2 class="rp-toc-include" id="how-to-read-a-compensation-trace"><a href="#how-to-read-a-compensation-trace" class="rp-header-anchor rp-link" aria-hidden="true">#</a>How to Read a Compensation Trace</h2>
+<p>The compensation path is triggered by <code>POST /demo/trigger-payment-failure</code>. The trace structure
+reflects the point of failure and the reverse execution:</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>[HTTP POST /demo/trigger-payment-failure]</span></span>
+<span class="line"><span>  └─ [Mediator.Send PlaceOrderCommand]</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>Then in background poll cycles:</p>
+<div class="rp-codeblock language-txt"><div class="rp-codeblock__content"><div class="rp-codeblock__content__scroll-container rp-scrollbar rp-scrollbar--always"><pre class="shiki css-variables" style="background-color:var(--shiki-background);color:var(--shiki-foreground)" tabindex="0" data-lang="txt"><code><span class="line"><span>[saga.step.execute]  step_index=0  (ReserveInventoryStep — succeeds)</span></span>
+<span class="line"><span>[saga.step.execute]  step_index=1  (ProcessPaymentStep — fails, span status=Error)</span></span>
+<span class="line"><span>[saga.step.compensate]  step_index=1  (ProcessPaymentStep.CompensateAsync)</span></span>
+<span class="line"><span>[saga.step.compensate]  step_index=0  (ReserveInventoryStep.CompensateAsync)</span></span></code></pre></div><div class="rp-code-button-group"><button class="rp-code-button-group__button rp-code-wrap-button" title="切换代码换行" aria-label="切换代码换行"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrapped"><path fill="currentColor" d="M21 5H3v2h18zM3 19h7v-2H3zm0-6h15c1 0 2 .43 2 2s-1 2-2 2h-2v-2l-4 3 4 3v-2h2c2.95 0 4-1.27 4-4 0-2.72-1-4-4-4H3z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-button-group__icon--wrap"><path fill="currentColor" d="M16 7H3V5h13zM3 19h13v-2H3zm19-7-4-3v2H3v2h15v2z"></path></svg></button><button class="rp-code-button-group__button rp-code-copy-button" title="复制代码"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--copy"><path fill="currentColor" d="M20 8v12H8V8zm0-2H8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2"></path><path fill="currentColor" d="M4 16H2V4a2 2 0 0 1 2-2h12v2H4Z"></path></svg><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" class="rp-code-button-group__icon rp-code-copy-button__icon rp-code-copy-button__icon--success"><path fill="currentColor" d="m9.55 18-5.7-5.7 1.425-1.425L9.55 15.15l9.175-9.175L20.15 7.4z"></path></svg></button></div></div></div>
+<p>When <code>ProcessPaymentStep.ExecuteAsync</code> throws <code>SagaStepFailedException</code>, the executor:</p>
+<ol>
+<li>Sets <code>activity?.SetStatus(ActivityStatusCode.Error, ex.Message)</code> on the failing span — visible
+as a red span in the Dashboard.</li>
+<li>Transitions the <code>SagaInstance</code> to <code>SagaState.Compensating</code>.</li>
+<li>Enqueues <code>Compensate</code> entries for steps 1 and 0 in reverse order.</li>
+</ol>
+<p>The compensation spans appear with <code>saga.direction=Compensate</code> in their tags. Because they run in
+the same background service with the same <code>ActivitySource</code>, they appear in the Dashboard&#x27;s &quot;all
+spans&quot; list alongside the execution spans. Searching by <code>saga.saga_id</code> brings them together.</p>
+<p>To distinguish failure from normal completion in the Dashboard:</p>
+<ul>
+<li>A <code>saga.step.execute</code> span with <code>ActivityStatus=Error</code> is the failing step.</li>
+<li>Following <code>saga.step.compensate</code> spans at lower <code>step_index</code> values are the rollback.</li>
+<li>The final <code>SagaInstance.State</code> stored in the database is <code>Compensated</code>.</li>
+</ul>
+<hr/>
+<h2 class="rp-toc-include" id="saga_id-as-cross-trace-correlation"><a href="#saga_id-as-cross-trace-correlation" class="rp-header-anchor rp-link" aria-hidden="true">#</a>saga_id as Cross-Trace Correlation</h2>
+<p>Because saga steps run in a background poll loop that does not inherit the HTTP request&#x27;s trace
+context, each saga step span is technically a separate root trace in OTLP terms. The <code>saga.saga_id</code>
+tag set on every step span is the mechanism for correlating them.</p>
+<p>In the Aspire Dashboard:</p>
+<ol>
+<li>Trigger any demo endpoint and note the <code>sagaId</code> in the response body.</li>
+<li>Open <strong>Traces</strong> and use the attribute search or filter bar to search for
+<code>saga.saga_id = &lt;your-uuid&gt;</code>.</li>
+<li>All <code>saga.step.execute</code> and <code>saga.step.compensate</code> spans for that saga instance appear,
+giving you a complete step-by-step history.</li>
+</ol>
+<p>The tag name is <code>saga.saga_id</code> and its value is the <code>SagaInstance.Id</code> UUID. This tag is set in
+<code>SagaStepExecutor.ProcessEntryAsync</code> via <code>activity?.SetTag(&quot;saga.saga_id&quot;, entry.SagaId.ToString())</code>.</p>
+<p>Note for contributors: connecting saga step spans back to the originating HTTP trace via a stored
+<code>TraceParent</code> on the <code>SagaInstance</code> row — similar to how <code>OutboxMessage</code> does it — would allow
+the full saga lifecycle to appear as one unified trace tree. This is not currently implemented
+and is tracked as future work.</p>
+<hr/>
+<h2 class="rp-toc-include" id="how-to-read-outbox-lag"><a href="#how-to-read-outbox-lag" class="rp-header-anchor rp-link" aria-hidden="true">#</a>How to Read Outbox Lag</h2>
+<p>Outbox lag is the time between when an integration event was enqueued (the producer&#x27;s
+<code>SaveChangesAsync</code> commit) and when it was actually published to the broker (the
+<code>outbox.publish</code> span).</p>
+<p>To measure lag in the Dashboard:</p>
+<ol>
+<li>Find the <code>Mediator.Send</code> span for a command that produces an integration event (e.g.
+<code>CreateProductCommand</code>).</li>
+<li>Note its <strong>end timestamp</strong> — this is approximately when <code>SaveChangesAsync</code> committed and the
+outbox row was written.</li>
+<li>Find the <code>outbox.publish</code> span for the same message (match by <code>messaging.message_id</code>, or by
+<code>messaging.destination</code> + approximate time).</li>
+<li>The <strong>start timestamp</strong> of <code>outbox.publish</code> minus the end timestamp of the producer span is
+the outbox lag for that message.</li>
+</ol>
+<p>Under normal conditions with the default <code>OutboxPublisherOptions.PollInterval</code> of 2 seconds and
+<code>BatchSize</code> of 50, lag is typically 0–4 seconds. Under heavy load, lag grows as the batch fills.
+Reduce <code>PollInterval</code> or increase <code>BatchSize</code> to tune.</p>
+<p>The <code>OutboxPublisherOptions</code> defaults:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Setting</th><th>Default</th><th>Effect</th></tr></thead><tbody><tr><td><code>BatchSize</code></td><td>50</td><td>Messages processed per poll cycle</td></tr><tr><td><code>PollInterval</code></td><td>2 seconds</td><td>Sleep between cycles when queue is non-empty</td></tr><tr><td><code>MaxAttempts</code></td><td>5</td><td>Publish attempts before transitioning row to <code>Failed</code></td></tr><tr><td><code>RetryBaseDelay</code></td><td>1 second</td><td>Exponential backoff base delay</td></tr></tbody></table></div>
+<p>A message in <code>OutboxStatus.Failed</code> will not be retried automatically. Monitor for <code>Failed</code> rows
+in the <code>outbox_messages</code> table and alert on them — they represent messages that could not be
+delivered after all attempts.</p>
+<hr/>
+<h2 class="rp-toc-include" id="pitfalls-and-common-gaps"><a href="#pitfalls-and-common-gaps" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Pitfalls and Common Gaps</h2>
+<h3 class="rp-toc-include" id="background-services-that-do-not-start-an-activity"><a href="#background-services-that-do-not-start-an-activity" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Background services that do not start an activity</h3>
+<p><code>SagaStepExecutor</code> and <code>OutboxPublisherBackgroundService</code> are <code>BackgroundService</code> implementations.
+Their <code>ExecuteAsync</code> loop does not have an ambient <code>Activity</code> unless one is explicitly started.
+This means:</p>
+<ul>
+<li>Any log message emitted inside the loop but outside a span will have no <code>TraceId</code> attached in
+structured logs.</li>
+<li>Any child activity started without an explicit parent context appears as a root span in OTLP.</li>
+</ul>
+<p>If you add custom background services to your application and want their spans connected to
+a broader trace, you must restore the parent context manually — the same pattern used by
+<code>OutboxPublisherBackgroundService</code> with <code>ActivityContext.TryParse</code>.</p>
+<h3 class="rp-toc-include" id="async-void-timers-and-fire-and-forget"><a href="#async-void-timers-and-fire-and-forget" class="rp-header-anchor rp-link" aria-hidden="true">#</a>async void timers and fire-and-forget</h3>
+<p>Avoid <code>async void</code> methods and <code>_ = Task.Run(...)</code> inside handlers or background services.
+Exceptions thrown on <code>async void</code> paths crash the process without ending any open spans, leaving
+dangling incomplete spans in the Dashboard. Use <code>async Task</code> and <code>await</code> throughout.</p>
+<h3 class="rp-toc-include" id="gateway-observability"><a href="#gateway-observability" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Gateway observability</h3>
+<p>The standalone <code>Kun.Gateway</code> host registers <code>AddKunObservability</code> with service name
+<code>kun-gateway</code>, configured through <code>KunObservability</code>. EF instrumentation is disabled because
+this host does not access EF. Native AOT hosts must set <code>IncludeEfCore=false</code>; a runtime-feature
+guard removes that reflection-based path at link time and rejects attempts to enable it at runtime. ASP.NET request spans cover proxy and JWKS requests, while
+HttpClient instrumentation covers downstream calls; there is no separate custom transform span.
+The gateway remains in the Native AOT audit. Consumers that reference the gateway package in
+their own host choose their own observability registration.</p>
+<h3 class="rp-toc-include" id="key-span-names-to-recognize-at-a-glance"><a href="#key-span-names-to-recognize-at-a-glance" class="rp-header-anchor rp-link" aria-hidden="true">#</a>Key span names to recognize at a glance</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="rp-table-scroll-container rp-scrollbar"><table><thead><tr><th>Span name</th><th>Source</th><th>Meaning</th></tr></thead><tbody><tr><td><code>Mediator.Send {Type}</code></td><td><code>Kun.Mediator</code></td><td>A command or query was dispatched</td></tr><tr><td><code>outbox.publish</code></td><td><code>Kun.EventBus.Outbox</code></td><td>An outbox row was published to the broker</td></tr><tr><td><code>grpc.server</code></td><td><code>Kun.Grpc</code></td><td>A unary or streaming gRPC call was handled</td></tr><tr><td><code>saga.step.execute</code></td><td><code>Kun.Saga</code></td><td>A saga step ran forward</td></tr><tr><td><code>saga.step.compensate</code></td><td><code>Kun.Saga</code></td><td>A saga step ran in compensation</td></tr></tbody></table></div><!--/$--></div><footer class="rp-doc-footer"><div class="rp-doc-footer__edit"></div><div class="rp-doc-footer__divider"></div><div class="rp-prev-next-page"><a href="/pr-preview/pr-50/sdk/kun/guides/schema-per-service.html" class="rp-prev-next-page__item rp-prev-next-page__prev rp-link"><span class="rp-prev-next-page__item__desc">上一页</span><span class="rp-prev-next-page__item__title"><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon rp-prev-next-page__rotate_180"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg><span>Schema-per-service with KunDbContext</span></span></a><a href="/pr-preview/pr-50/sdk/kun/guides/validating-commands.html" class="rp-prev-next-page__item rp-prev-next-page__next rp-link"><span class="rp-prev-next-page__item__desc">下一页</span><span class="rp-prev-next-page__item__title"><span>Command 校验指南（Kun.Validation）</span><svg width="1em" height="1em" viewBox="0 0 32 32" class="rp-prev-next-page__icon"><path fill="currentColor" d="M22 16 12 26l-1.4-1.4 8.6-8.6-8.6-8.6L12 6z"></path></svg></span></a></div></footer></main></div><aside class="rp-doc-layout__outline rp-scrollbar"><div class="rp-outline"><div class="rp-outline__title">目录<svg width="14" height="14" class="rp-progress-circle"><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-divider-light)" stroke-width="2"></circle><circle cx="7" cy="7" r="6" stroke-linecap="round" fill="none" stroke="var(--rp-c-brand)" stroke-width="2" stroke-dasharray="37.69911184307752" stroke-dashoffset="37.69911184307752" transform="rotate(-90 7 7)" style="transition:stroke-dashoffset 0.3s"></circle></svg></div><nav class="rp-outline__toc rp-scrollbar"><a href="#w3c-trace-context-and-otlp" class="rp-toc-item rp-link" title="W3C Trace Context and OTLP" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">W3C Trace Context and OTLP</span></a><a href="#what-instruments-what" class="rp-toc-item rp-link" title="What Instruments What" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">What Instruments What</span></a><a href="#kunmediator" class="rp-toc-item rp-link" title="Kun.Mediator" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Kun.Mediator</span></a><a href="#kuneventbusoutbox" class="rp-toc-item rp-link" title="Kun.EventBus.Outbox" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Kun.EventBus.Outbox</span></a><a href="#kungrpc" class="rp-toc-item rp-link" title="Kun.Grpc" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Kun.Grpc</span></a><a href="#kunsaga" class="rp-toc-item rp-link" title="Kun.Saga" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Kun.Saga</span></a><a href="#how-to-read-a-happy-path-trace" class="rp-toc-item rp-link" title="How to Read a Happy-Path Trace" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">How to Read a Happy-Path Trace</span></a><a href="#how-to-read-a-compensation-trace" class="rp-toc-item rp-link" title="How to Read a Compensation Trace" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">How to Read a Compensation Trace</span></a><a href="#saga_id-as-cross-trace-correlation" class="rp-toc-item rp-link" title="saga_id as Cross-Trace Correlation" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">saga_id as Cross-Trace Correlation</span></a><a href="#how-to-read-outbox-lag" class="rp-toc-item rp-link" title="How to Read Outbox Lag" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">How to Read Outbox Lag</span></a><a href="#pitfalls-and-common-gaps" class="rp-toc-item rp-link" title="Pitfalls and Common Gaps" style="padding-left:0" data-depth="0"><span class="rp-toc-item__text rp-doc">Pitfalls and Common Gaps</span></a><a href="#background-services-that-do-not-start-an-activity" class="rp-toc-item rp-link" title="Background services that do not start an activity" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Background services that do not start an activity</span></a><a href="#async-void-timers-and-fire-and-forget" class="rp-toc-item rp-link" title="async void timers and fire-and-forget" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">async void timers and fire-and-forget</span></a><a href="#gateway-observability" class="rp-toc-item rp-link" title="Gateway observability" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Gateway observability</span></a><a href="#key-span-names-to-recognize-at-a-glance" class="rp-toc-item rp-link" title="Key span names to recognize at a glance" style="padding-left:12px" data-depth="1"><span class="rp-toc-item__text rp-doc">Key span names to recognize at a glance</span></a></nav><div class="rp-outline__divider"></div><div class="rp-outline__bottom"></div></div></aside></div></div>
+    <div id="__rspress_modal_container"></div>
+  </body>
+</html>
